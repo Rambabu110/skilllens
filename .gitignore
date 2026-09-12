@@ -1,0 +1,51 @@
+# Python & Backend
+backend/venv/
+backend/app/venv/
+venv/
+__pycache__/
+*/__pycache__/
+*.py[cod]
+*$py.class
+*.db
+*.sqlite3
+backend/skilllens.db
+backend/data/*.db
+
+# Environment Variables & Secrets
+.env
+*.env
+.env.*
+backend/.env
+frontend/.env
+!*.env.example
+*.pem
+*.key
+groq api*.txt
+*api*.txt
+
+# Node & Frontend
+frontend/node_modules/
+node_modules/
+frontend/dist/
+dist/
+.npm
+*.tsbuildinfo
+
+# Archives & Temporary files
+archive/
+archive.zip
+*.zip
+*.tar.gz
+*.log
+.DS_Store
+Thumbs.db
+
+# IDE & Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+*.pdf
+Basic_English_Grammar_Book_1.pdf
+.vercel
