@@ -274,7 +274,7 @@ export default function LoginPage() {
                 d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.66-2.84c-1.07.72-2.45 1.16-4.27 1.16-3.1 0-5.74-2.35-6.62-5.21L1.72 16.03C3.55 19.8 7.42 23 12 23z"
               />
             </svg>
-            <span>Continue with Google</span>
+            <span>Sign in with Google</span>
           </button>
 
           {/* Divider */}

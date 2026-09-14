@@ -271,7 +271,7 @@ export default function AuthModal() {
               <path fill="#FBBC05" d="M5.38 14.79c-.23-.68-.36-1.41-.36-2.16s.13-1.48.36-2.16L1.72 7.63C.62 9.8 0 12 0 14.37s.62 4.57 1.72 6.74l3.66-2.84z" />
               <path fill="#34A853" d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.66-2.84c-1.07.72-2.45 1.16-4.27 1.16-3.1 0-5.74-2.35-6.62-5.21L1.72 16.03C3.55 19.8 7.42 23 12 23z" />
             </svg>
-            <span>Continue with Government Google Account</span>
+            <span>Sign in with Google</span>
           </button>
 
           {/* Divider */}
