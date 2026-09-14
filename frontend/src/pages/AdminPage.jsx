@@ -427,11 +427,11 @@ export default function AdminPage() {
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex rounded-2xl bg-slate-900/80 p-1.5 border border-white/[0.08] w-full max-w-xl">
+      <div className="flex overflow-x-auto no-scrollbar rounded-2xl bg-slate-900/80 p-1.5 border border-white/[0.08] w-full max-w-2xl">
         <button
           type="button"
           onClick={() => setActiveTab("learners")}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 sm:shrink ${
             activeTab === "learners"
               ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
               : "text-slate-400 hover:text-white"
@@ -447,7 +447,7 @@ export default function AdminPage() {
         <button
           type="button"
           onClick={() => setActiveTab("logins")}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 sm:shrink ${
             activeTab === "logins"
               ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
               : "text-slate-400 hover:text-white"
@@ -463,7 +463,7 @@ export default function AdminPage() {
         <button
           type="button"
           onClick={() => setActiveTab("cohort")}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 ${
+          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 sm:shrink ${
             activeTab === "cohort"
               ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
               : "text-slate-400 hover:text-white"
@@ -499,12 +499,12 @@ export default function AdminPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5 w-full sm:w-auto">
               {/* Cadre Filter */}
               <select
                 value={selectedCadre}
                 onChange={(e) => setSelectedCadre(e.target.value)}
-                className="bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-400"
+                className="w-full sm:w-auto flex-1 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-400"
               >
                 <option value="">All Statistical Cadres</option>
                 {positions.map((p) => (
@@ -518,7 +518,7 @@ export default function AdminPage() {
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value)}
-                className="bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-400"
+                className="w-full sm:w-auto flex-1 bg-slate-900/80 border border-white/10 rounded-xl px-3 py-2 text-xs text-slate-300 focus:outline-none focus:border-teal-400"
               >
                 <option value="name_asc">Name: A to Z</option>
                 <option value="name_desc">Name: Z to A</option>

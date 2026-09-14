@@ -39,6 +39,7 @@ export default function QuizPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [loadingText, setLoadingText] = useState("");
   const [error, setError] = useState("");
 
   async function handleGenerate() {
@@ -47,6 +48,7 @@ export default function QuizPage() {
     if (!authed) return;
     setError("");
     setLoading(true);
+    setLoadingText(file ? "Uploading & Processing Document…" : "Generating Assessment Questions…");
     try {
       let documentId = null;
       if (file) {
@@ -56,6 +58,7 @@ export default function QuizPage() {
           headers: { "Content-Type": "multipart/form-data" },
         });
         documentId = uploadRes.data.document_id;
+        setLoadingText("Generating Adaptive Questions & Rubrics…");
       }
 
       const genRes = await client.post("/quiz/generate", {
@@ -68,6 +71,7 @@ export default function QuizPage() {
       setQuiz(genRes.data);
 
       if (mode === "adaptive") {
+        setLoadingText("Initializing Adaptive Testing Session…");
         // Start Computerized Adaptive Testing session
         const adaptRes = await client.post("/quiz/adaptive/start", {
           quiz_id: genRes.data.id,
@@ -83,10 +87,11 @@ export default function QuizPage() {
     } catch (err) {
       setError(
         err.response?.data?.detail ||
-          "Unable to generate quiz. If this is your first run, check that GEMINI_API_KEY or GROQ_API_KEY is configured in backend/.env."
+          "Unable to generate quiz. Please verify that the file is accessible and try again."
       );
     } finally {
       setLoading(false);
+      setLoadingText("");
     }
   }
 
@@ -152,66 +157,66 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="space-y-8 pb-12 max-w-4xl mx-auto">
+    <div className="space-y-7 pb-12 max-w-4xl mx-auto">
       {/* Visual Stepper */}
-      <div className="flex items-center justify-between px-6 py-3 rounded-2xl glass-panel text-xs text-slate-400">
-        <div className={`flex items-center gap-2 ${step === STEPS.SOURCE ? "text-teal-400 font-bold" : "text-slate-400"}`}>
-          <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">1</span>
-          <span>Source & Configuration</span>
+      <div className="flex items-center justify-between px-5 py-3 rounded-lg sovereign-card text-xs text-slate-400 font-mono">
+        <div className={`flex items-center gap-2 ${step === STEPS.SOURCE ? "text-emerald-400 font-semibold" : "text-slate-400"}`}>
+          <span className="w-5 h-5 rounded border border-current flex items-center justify-center text-[10px] num-tabular">1</span>
+          <span className="font-sans">Protocol Source</span>
         </div>
-        <div className="w-12 h-[1px] bg-white/10" />
-        <div className={`flex items-center gap-2 ${step === STEPS.TAKING ? "text-teal-400 font-bold" : "text-slate-400"}`}>
-          <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">2</span>
-          <span>Interactive Assessment</span>
+        <div className="w-8 sm:w-16 h-[1px] bg-white/10" />
+        <div className={`flex items-center gap-2 ${step === STEPS.TAKING ? "text-emerald-400 font-semibold" : "text-slate-400"}`}>
+          <span className="w-5 h-5 rounded border border-current flex items-center justify-center text-[10px] num-tabular">2</span>
+          <span className="font-sans">Adaptive Exam</span>
         </div>
-        <div className="w-12 h-[1px] bg-white/10" />
-        <div className={`flex items-center gap-2 ${step === STEPS.RESULT ? "text-teal-400 font-bold" : "text-slate-400"}`}>
-          <span className="w-5 h-5 rounded-full border border-current flex items-center justify-center text-[10px]">3</span>
-          <span>Sovereign Certification</span>
+        <div className="w-8 sm:w-16 h-[1px] bg-white/10" />
+        <div className={`flex items-center gap-2 ${step === STEPS.RESULT ? "text-emerald-400 font-semibold" : "text-slate-400"}`}>
+          <span className="w-5 h-5 rounded border border-current flex items-center justify-center text-[10px] num-tabular">3</span>
+          <span className="font-sans">Cadre Scoring</span>
         </div>
       </div>
 
       {/* Step 1: Configuration & Source Selection */}
       {step === STEPS.SOURCE && (
-        <div className="p-8 rounded-2xl glass-panel space-y-6">
-          <div>
+        <div className="p-5 sm:p-7 rounded-lg sovereign-card space-y-6">
+          <div className="border-b border-white/[0.08] pb-4">
             <div className="flex items-center gap-2">
-              <Sparkles className="w-5 h-5 text-teal-400" />
-              <h2 className="font-display font-bold text-xl text-white">
-                AI Competency Assessment Engine
+              <Sparkles className="w-4 h-4 text-emerald-400" />
+              <h2 className="font-display font-bold text-lg text-white">
+                Computerized Adaptive Testing Engine
               </h2>
             </div>
             <p className="text-xs text-slate-400 mt-1">
-              Generate an adaptive evaluation using Mission Karmayogi module content or any custom training document.
+              Dynamic item selection calibrated to the FRAC framework or zero-shot parsed training circulars.
             </p>
           </div>
 
           {/* Preselected Module Notification */}
           {preselectedTitle && !file && (
-            <div className="p-4 rounded-xl bg-teal-400/10 border border-teal-400/20 flex items-center justify-between">
+            <div className="p-3.5 rounded-md bg-[#0c1629] border border-emerald-500/30 flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 text-teal-400 shrink-0" />
+                <BookOpen className="w-4 h-4 text-emerald-400 shrink-0" />
                 <div>
-                  <p className="text-xs font-semibold text-white">Selected iGOT Module</p>
-                  <p className="text-[11px] text-teal-200/90">{preselectedTitle}</p>
+                  <p className="text-xs font-semibold text-white">Active Curriculum Reference</p>
+                  <p className="text-[11px] text-slate-300 font-sans">{preselectedTitle}</p>
                 </div>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/20 text-teal-300 font-medium">
-                Active Source
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                LOCKED
               </span>
             </div>
           )}
 
           {/* File Upload Zone */}
           <div>
-            <label className="block text-xs font-semibold text-slate-300 mb-2">
-              Or Upload Official Material (PDF)
+            <label className="block text-xs font-medium text-slate-300 mb-2 font-mono">
+              DOCUMENT CONTEXT (OPTIONAL PDF CIRCULAR)
             </label>
             <div
-              className={`border-2 border-dashed rounded-2xl p-6 text-center transition-all ${
+              className={`border border-dashed rounded-lg p-6 text-center transition-colors ${
                 file
-                  ? "border-teal-400/50 bg-teal-400/5"
-                  : "border-white/10 hover:border-white/20 bg-slate-900/40"
+                  ? "border-emerald-500/50 bg-[#070d18]"
+                  : "border-white/15 hover:border-white/25 bg-[#070d18]"
               }`}
             >
               <input
@@ -222,21 +227,21 @@ export default function QuizPage() {
                 onChange={(e) => setFile(e.target.files[0] || null)}
               />
               <label htmlFor="doc-upload" className="cursor-pointer flex flex-col items-center">
-                <UploadCloud className={`w-8 h-8 mb-2 ${file ? "text-teal-400" : "text-slate-400"}`} />
+                <UploadCloud className={`w-7 h-7 mb-2 ${file ? "text-emerald-400" : "text-slate-500"}`} />
                 {file ? (
                   <div>
-                    <p className="text-xs font-semibold text-teal-300">{file.name}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5">
-                      {(file.size / 1024).toFixed(1)} KB · Click to choose different file
+                    <p className="text-xs font-semibold text-emerald-300 font-mono">{file.name}</p>
+                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                      {(file.size / 1024).toFixed(1)} KB · Click to replace
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs font-medium text-slate-200">
-                      Drop circular or curriculum PDF here, or <span className="text-teal-400 font-semibold">Browse</span>
+                    <p className="text-xs font-medium text-slate-300">
+                      Drop official circular or manual PDF, or <span className="text-emerald-400 underline underline-offset-2">Select file</span>
                     </p>
                     <p className="text-[10px] text-slate-400 mt-1">
-                      Zero-shot auto-tagging will map content to official FRAC competencies
+                      System will map content across statistical competencies
                     </p>
                   </div>
                 )}
@@ -245,56 +250,56 @@ export default function QuizPage() {
           </div>
 
           {/* Configuration Options */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
             {/* Assessment Mode Toggle */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-semibold text-slate-300 mb-2 flex items-center justify-between">
-                <span>Assessment Mode</span>
-                <span className="text-[10px] text-teal-400 font-normal">Adaptive CAT adjusts difficulty dynamically</span>
+              <label className="block text-xs font-medium text-slate-300 mb-2 flex items-center justify-between font-mono">
+                <span>EVALUATION PROTOCOL</span>
+                <span className="text-[11px] text-slate-400 font-normal">CAT dynamically branches difficulty</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <button
                   type="button"
                   onClick={() => setMode("adaptive")}
-                  className={`p-3 rounded-xl text-left transition-all border ${
+                  className={`p-3.5 rounded-lg text-left transition-colors border ${
                     mode === "adaptive"
-                      ? "bg-teal-400/15 border-teal-400 text-white shadow-lg shadow-teal-500/10"
-                      : "bg-slate-900/60 border-white/10 text-slate-400 hover:text-slate-200"
+                      ? "bg-[#0c1629] border-emerald-400 text-white"
+                      : "bg-[#070d18] border-white/10 text-slate-400 hover:text-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-teal-300">Computerized Adaptive Testing (CAT)</span>
-                    <span className="px-1.5 py-0.5 rounded bg-teal-400/20 text-teal-300 text-[9px] font-bold uppercase">Default</span>
+                    <span className="text-xs font-semibold text-white">Computerized Adaptive Testing</span>
+                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[9px] font-mono font-bold uppercase">Active</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">
-                    Real-time ability (&theta;) tracing; dynamically serves easier/harder questions until score converges.
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Bayesian ability (&theta;) scoring; dynamically serves easier/harder items until convergence.
                   </p>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => setMode("fixed")}
-                  className={`p-3 rounded-xl text-left transition-all border ${
+                  className={`p-3.5 rounded-lg text-left transition-colors border ${
                     mode === "fixed"
-                      ? "bg-teal-400/15 border-teal-400 text-white shadow-lg shadow-teal-500/10"
-                      : "bg-slate-900/60 border-white/10 text-slate-400 hover:text-slate-200"
+                      ? "bg-[#0c1629] border-emerald-400 text-white"
+                      : "bg-[#070d18] border-white/10 text-slate-400 hover:text-slate-300"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-bold text-slate-200">Fixed-Length Assessment</span>
-                    <span className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-400 text-[9px]">Classic</span>
+                    <span className="text-xs font-semibold text-slate-200">Fixed-Length Battery</span>
+                    <span className="px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-400 text-[9px] font-mono">Static</span>
                   </div>
-                  <p className="text-[11px] text-slate-400">
-                    Fixed question count without adaptive theta branching.
+                  <p className="text-[11px] text-slate-400 leading-snug">
+                    Standard linear item sequence with predetermined question set.
                   </p>
                 </button>
               </div>
             </div>
 
-            {/* Question Count (for fixed mode or pool size) */}
+            {/* Question Count */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2">
-                {mode === "adaptive" ? "Adaptive Question Pool" : "Questions"}
+              <label className="block text-xs font-medium text-slate-300 mb-2 font-mono">
+                {mode === "adaptive" ? "QUESTION POOL CAPACITY" : "ITEM COUNT"}
               </label>
               <div className="flex gap-2">
                 {[3, 5, 8, 10].map((count) => (
@@ -302,10 +307,10 @@ export default function QuizPage() {
                     key={count}
                     type="button"
                     onClick={() => setNumQuestions(count)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex-1 py-1.5 rounded-md text-xs font-mono font-medium transition-colors ${
                       numQuestions === count
-                        ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
-                        : "bg-slate-900/60 text-slate-400 hover:text-white border border-white/10"
+                        ? "bg-emerald-400 text-slate-950 font-bold"
+                        : "bg-[#070d18] text-slate-400 hover:text-white border border-white/10"
                     }`}
                   >
                     {count}
@@ -316,9 +321,9 @@ export default function QuizPage() {
 
             {/* Language Toggle */}
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-2 flex items-center gap-1.5">
-                <Languages className="w-3.5 h-3.5 text-teal-400" />
-                <span>Evaluation Language</span>
+              <label className="block text-xs font-medium text-slate-300 mb-2 flex items-center gap-1.5 font-mono">
+                <Languages className="w-3.5 h-3.5 text-slate-400" />
+                <span>OFFICIAL LANGUAGE</span>
               </label>
               <div className="flex gap-2">
                 {[
@@ -329,10 +334,10 @@ export default function QuizPage() {
                     key={lang.id}
                     type="button"
                     onClick={() => setLanguage(lang.id)}
-                    className={`flex-1 py-2 rounded-xl text-xs font-semibold transition-all ${
+                    className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
                       language === lang.id
-                        ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
-                        : "bg-slate-900/60 text-slate-400 hover:text-white border border-white/10"
+                        ? "bg-emerald-400 text-slate-950 font-bold"
+                        : "bg-[#070d18] text-slate-400 hover:text-white border border-white/10"
                     }`}
                   >
                     {lang.label}
@@ -343,7 +348,7 @@ export default function QuizPage() {
           </div>
 
           {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 flex items-center gap-2">
+            <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300 flex items-center gap-2 font-mono">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{error}</span>
             </div>
@@ -352,17 +357,17 @@ export default function QuizPage() {
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="w-full py-3 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 font-bold text-sm shadow-xl shadow-teal-500/20 hover:brightness-110 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+            className="btn-primary w-full justify-center py-2.5 text-xs gap-2"
           >
             {loading ? (
               <>
-                <div className="w-4 h-4 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                <span>Invoking Gemini Model…</span>
+                <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                <span>{loadingText || "Processing Assessment…"}</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-4 h-4" />
-                <span>Generate Adaptive Assessment</span>
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>Initialize Adaptive Assessment</span>
               </>
             )}
           </button>
@@ -371,38 +376,38 @@ export default function QuizPage() {
 
       {/* Step 2: Taking Quiz */}
       {step === STEPS.TAKING && (quiz || adaptiveSession) && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {mode === "adaptive" && adaptiveSession ? (
             /* Adaptive Testing Header: Live Difficulty Meter & Ability Theta */
-            <div className="p-6 rounded-2xl glass-panel space-y-4">
+            <div className="p-5 sm:p-6 rounded-lg sovereign-card space-y-4">
               <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-teal-400 animate-pulse shadow-[0_0_8px_#48E5C2]" />
-                  <span className="font-bold text-white text-sm">Computerized Adaptive Testing</span>
-                  <span className="text-slate-400">·</span>
-                  <span className="text-teal-300 font-semibold">
-                    Question #{adaptiveSession.questions_answered + 1}
+                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
+                  <span className="font-semibold text-white">Computerized Adaptive Testing</span>
+                  <span className="text-slate-400 font-mono">·</span>
+                  <span className="text-emerald-300 font-mono font-medium">
+                    Item #{adaptiveSession.questions_answered + 1}
                   </span>
                 </div>
 
                 <div className="flex items-center gap-3">
                   {adaptiveSession.difficulty_trend && adaptiveSession.difficulty_trend !== "same" && (
                     <span
-                      className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all duration-500 animate-bounce ${
+                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium border ${
                         adaptiveSession.difficulty_trend === "harder"
-                          ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30"
-                          : "bg-amber-500/20 text-amber-300 border border-amber-500/30"
+                          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                          : "bg-amber-500/15 text-amber-300 border-amber-500/30"
                       }`}
                     >
                       {adaptiveSession.difficulty_trend === "harder"
-                        ? "↑ Adaptive Level Scaled Up"
-                        : "↓ Adaptive Level Adjusted Down"}
+                        ? "↑ Item Difficulty Scaled Up"
+                        : "↓ Difficulty Calibrated Down"}
                     </span>
                   )}
 
-                  <div className="px-3 py-1.5 rounded-xl bg-slate-900/80 border border-white/10 flex items-center gap-2">
-                    <span className="text-[10px] uppercase font-bold text-slate-400">Ability (&theta;):</span>
-                    <span className="font-mono font-extrabold text-teal-300 text-xs">
+                  <div className="px-2.5 py-1 rounded-md bg-[#070d18] border border-white/10 flex items-center gap-1.5 font-mono">
+                    <span className="text-[10px] uppercase text-slate-400">Ability (&theta;):</span>
+                    <span className="font-bold text-white text-xs num-tabular">
                       {adaptiveSession.theta?.toFixed(2)} / 5.00
                     </span>
                   </div>
@@ -411,21 +416,21 @@ export default function QuizPage() {
 
               {/* Live 5-Level Difficulty Meter */}
               <div className="space-y-2 pt-2 border-t border-white/[0.08]">
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400 font-medium">Live Item Difficulty Meter:</span>
-                  <span className="font-bold text-white flex items-center gap-1.5">
-                    <span className="text-teal-400">Level {adaptiveSession.current_difficulty}</span>
+                <div className="flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-slate-400">CURRENT DIFFICULTY ROUTING:</span>
+                  <span className="font-semibold text-white flex items-center gap-1.5">
+                    <span className="text-emerald-400">Level {adaptiveSession.current_difficulty}</span>
                     <span className="text-slate-400 font-normal">
                       (
                       {adaptiveSession.current_difficulty === 1
-                        ? "Basic Recall"
+                        ? "Recall"
                         : adaptiveSession.current_difficulty === 2
                         ? "Elementary"
                         : adaptiveSession.current_difficulty === 3
-                        ? "FRAC Standard"
+                        ? "Standard FRAC"
                         : adaptiveSession.current_difficulty === 4
                         ? "Complex Logic"
-                        : "Advanced Synthesis"}
+                        : "Principal Mastery"}
                       )
                     </span>
                   </span>
@@ -438,16 +443,16 @@ export default function QuizPage() {
                     return (
                       <div
                         key={lvl}
-                        className={`py-2 px-1 rounded-xl text-center transition-all duration-300 border ${
+                        className={`py-1.5 px-1 rounded-md text-center border font-mono transition-colors ${
                           isActive
-                            ? "bg-gradient-to-b from-teal-400/30 to-emerald-500/20 border-teal-400 text-white shadow-lg shadow-teal-500/20 ring-1 ring-teal-400/50 scale-102"
+                            ? "bg-emerald-500/15 border-emerald-400 text-white"
                             : isPassed
-                            ? "bg-teal-400/10 border-teal-400/20 text-teal-300/70"
-                            : "bg-slate-900/40 border-white/[0.06] text-slate-400"
+                            ? "bg-[#070d18] border-emerald-500/30 text-emerald-400/80"
+                            : "bg-[#070d18] border-white/[0.06] text-slate-400"
                         }`}
                       >
-                        <p className={`text-xs font-bold ${isActive ? "text-teal-300" : ""}`}>
-                          Lvl {lvl}
+                        <p className={`text-xs font-semibold ${isActive ? "text-emerald-300" : ""}`}>
+                          L{lvl}
                         </p>
                         <p className="text-[9px] truncate">
                           {lvl === 1 ? "Recall" : lvl === 2 ? "Basic" : lvl === 3 ? "Standard" : lvl === 4 ? "Complex" : "Expert"}
@@ -460,24 +465,24 @@ export default function QuizPage() {
             </div>
           ) : (
             /* Classic Fixed Header */
-            <div className="p-5 rounded-2xl glass-panel flex flex-col gap-3">
+            <div className="p-4 rounded-lg sovereign-card flex flex-col gap-2.5">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="font-bold text-white">
-                    Question {currentIndex + 1} of {quiz?.questions.length}
+                  <span className="font-semibold text-white font-mono">
+                    Question {currentIndex + 1} / {quiz?.questions.length}
                   </span>
                   <span className="text-slate-400">·</span>
-                  <span className="text-teal-300 font-medium">
-                    {quiz?.title || "Official Statistical Protocol"}
+                  <span className="text-slate-300 font-medium">
+                    {quiz?.title || "Statistical Assessment Battery"}
                   </span>
                 </div>
-                <span className="text-slate-400">
-                  {answers.filter((a) => a !== -1).length} answered
+                <span className="text-slate-400 font-mono text-[11px]">
+                  {answers.filter((a) => a !== -1).length} completed
                 </span>
               </div>
-              <div className="w-full bg-slate-800/80 rounded-full h-1.5 overflow-hidden">
+              <div className="w-full bg-[#070d18] rounded-full h-1.5 overflow-hidden border border-white/[0.06]">
                 <div
-                  className="bg-gradient-to-r from-teal-400 to-emerald-400 h-full rounded-full transition-all duration-300"
+                  className="bg-emerald-400 h-full rounded-full transition-all duration-300"
                   style={{
                     width: `${((currentIndex + 1) / (quiz?.questions.length || 1)) * 100}%`,
                   }}
@@ -494,24 +499,24 @@ export default function QuizPage() {
             const qDiff = isAdapt ? adaptiveSession.current_difficulty : q.difficulty;
 
             return (
-              <div className="p-8 rounded-2xl glass-panel space-y-6">
+              <div className="p-5 sm:p-7 rounded-lg sovereign-card space-y-5">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="px-2.5 py-1 rounded-md bg-teal-400/10 text-teal-300 border border-teal-400/20 text-[10px] font-bold uppercase tracking-wider">
-                    Level {qDiff} Item
+                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] font-mono font-semibold uppercase tracking-wider">
+                    Level {qDiff} FRAC Item
                   </span>
                   {isAdapt && (
-                    <span className="text-[11px] text-slate-400">
-                      Theta target: {adaptiveSession.theta?.toFixed(2)}
+                    <span className="text-[11px] font-mono text-slate-400">
+                      Theta target: <span className="text-slate-200">{adaptiveSession.theta?.toFixed(2)}</span>
                     </span>
                   )}
                 </div>
 
-                <h3 className="font-display font-semibold text-lg text-white leading-relaxed">
+                <h3 className="font-display font-semibold text-base sm:text-lg text-white leading-relaxed">
                   {q.question}
                 </h3>
 
                 {/* Options List */}
-                <div className="space-y-3">
+                <div className="space-y-2.5">
                   {q.options.map((opt, oIdx) => {
                     const isSelected = currentSelected === oIdx;
 
@@ -520,50 +525,50 @@ export default function QuizPage() {
                         key={oIdx}
                         type="button"
                         onClick={() => handleSelectOption(currentIndex, oIdx)}
-                        className={`w-full p-4 rounded-xl text-left text-xs font-medium transition-all flex items-center justify-between gap-3 ${
+                        className={`w-full p-3.5 rounded-lg text-left text-xs font-medium transition-colors flex items-center justify-between gap-3 ${
                           isSelected
-                            ? "bg-teal-400/15 text-teal-200 border-2 border-teal-400 shadow-lg shadow-teal-500/10"
-                            : "bg-slate-900/50 text-slate-300 border border-white/[0.08] hover:border-white/20 hover:bg-slate-900/80"
+                            ? "bg-[#0c1629] text-white border border-emerald-400"
+                            : "bg-[#070d18] text-slate-300 border border-white/[0.08] hover:border-white/20"
                         }`}
                       >
                         <div className="flex items-center gap-3">
                           <span
-                            className={`w-6 h-6 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0 ${
+                            className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
                               isSelected
-                                ? "bg-teal-400 text-slate-950"
-                                : "bg-white/[0.05] text-slate-400"
+                                ? "bg-emerald-400 text-slate-950"
+                                : "bg-white/[0.06] text-slate-300"
                             }`}
                           >
                             {String.fromCharCode(65 + oIdx)}
                           </span>
-                          <span className="leading-relaxed">{opt}</span>
+                          <span className="leading-relaxed font-sans">{opt}</span>
                         </div>
-                        {isSelected && <Check className="w-4 h-4 text-teal-400 shrink-0" />}
+                        {isSelected && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
                       </button>
                     );
                   })}
                 </div>
 
                 {/* Action Navigation */}
-                <div className="flex items-center justify-between pt-6 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between pt-5 border-t border-white/[0.08]">
                   {isAdapt ? (
                     <>
-                      <div className="text-[11px] text-slate-400">
-                        Select your answer and continue to trigger dynamic difficulty recalculation.
+                      <div className="text-[11px] text-slate-400 font-mono">
+                        Item response triggers Bayesian theta update.
                       </div>
                       <button
                         onClick={handleAdaptiveAnswer}
                         disabled={loading || selectedOption === -1}
-                        className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 text-xs font-extrabold hover:brightness-110 shadow-lg shadow-teal-500/20 disabled:opacity-40 transition-all"
+                        className="btn-primary text-xs py-2 px-4 gap-1.5"
                       >
                         {loading ? (
                           <>
                             <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                            <span>Updating Theta & Estimating Next Item…</span>
+                            <span>Updating Theta…</span>
                           </>
                         ) : (
                           <>
-                            <span>Submit & Adapt Item</span>
+                            <span>Submit & Continue</span>
                             <ArrowRight className="w-3.5 h-3.5" />
                           </>
                         )}
@@ -574,7 +579,7 @@ export default function QuizPage() {
                       <button
                         onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
                         disabled={currentIndex === 0}
-                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold disabled:opacity-30 transition-colors"
+                        className="btn-secondary text-xs py-1.5 px-3 gap-1"
                       >
                         <ArrowLeft className="w-3.5 h-3.5" />
                         <span>Previous</span>
@@ -583,7 +588,7 @@ export default function QuizPage() {
                       {currentIndex < quiz.questions.length - 1 ? (
                         <button
                           onClick={() => setCurrentIndex((prev) => prev + 1)}
-                          className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-teal-400 text-slate-950 text-xs font-bold hover:brightness-110 shadow-md shadow-teal-500/20 transition-all"
+                          className="btn-primary text-xs py-1.5 px-3 gap-1"
                         >
                           <span>Next Question</span>
                           <ArrowRight className="w-3.5 h-3.5" />
@@ -592,7 +597,7 @@ export default function QuizPage() {
                         <button
                           onClick={handleSubmit}
                           disabled={loading || answers.includes(-1)}
-                          className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-gradient-to-r from-emerald-400 to-teal-400 text-slate-950 text-xs font-extrabold hover:brightness-110 shadow-lg shadow-emerald-500/20 disabled:opacity-40 transition-all"
+                          className="btn-primary text-xs py-1.5 px-3.5 gap-1.5"
                         >
                           {loading ? (
                             <>
@@ -601,7 +606,7 @@ export default function QuizPage() {
                             </>
                           ) : (
                             <>
-                              <Award className="w-4 h-4" />
+                              <Award className="w-3.5 h-3.5" />
                               <span>Submit Assessment</span>
                             </>
                           )}
@@ -619,72 +624,71 @@ export default function QuizPage() {
       {/* Step 3: Quiz Results & Verification */}
       {step === STEPS.RESULT && result && (
         <div className="space-y-6">
-          <div className="p-8 rounded-2xl glass-panel text-center relative overflow-hidden">
-            <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 flex items-center justify-center mx-auto mb-4 shadow-xl shadow-teal-500/20 ring-1 ring-white/20">
-              <Award className="w-8 h-8 text-slate-950" />
+          <div className="p-6 sm:p-8 rounded-lg sovereign-card text-center">
+            <div className="w-12 h-12 rounded-lg bg-[#0e1a30] border border-emerald-500/40 flex items-center justify-center mx-auto mb-3.5 shadow-sm">
+              <Award className="w-6 h-6 text-emerald-400" />
             </div>
 
-            <h2 className="font-display font-extrabold text-2xl text-white">
-              Assessment Completed & Certified
+            <h2 className="font-display font-bold text-xl text-white">
+              Assessment Verified & Logged
             </h2>
-            <p className="text-xs text-slate-400 mt-1">
-              Your verified scores and Bayesian/CAT estimates have been logged and synced into your Competency Passbook.
+            <p className="text-xs text-slate-400 mt-1 max-w-lg mx-auto">
+              Evaluation results and Bayesian item response parameters recorded to your sovereign competency passbook.
             </p>
 
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-2xl mx-auto">
+            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
               {/* Score */}
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.08]">
-                <p className="text-[10px] uppercase font-bold text-slate-400">Score</p>
-                <p className="text-2xl font-display font-extrabold text-white mt-0.5">
+              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
+                <p className="text-[10px] uppercase font-mono text-slate-400">Score</p>
+                <p className="text-2xl font-display font-bold text-white mt-0.5 num-tabular">
                   {result.score_percent || result.score}%
                 </p>
               </div>
 
               {/* Theta Ability */}
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.08]">
-                <p className="text-[10px] uppercase font-bold text-slate-400">Final Ability (&theta;)</p>
-                <p className="text-2xl font-display font-extrabold text-teal-300 mt-0.5 font-mono">
+              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
+                <p className="text-[10px] uppercase font-mono text-slate-400">Ability (&theta;)</p>
+                <p className="text-2xl font-display font-bold text-emerald-400 mt-0.5 font-mono num-tabular">
                   {result.final_theta !== undefined ? result.final_theta.toFixed(2) : ((result.score || 70) / 20).toFixed(2)}
                 </p>
               </div>
 
-              {/* Confidence of Estimate */}
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.08]">
-                <p className="text-[10px] uppercase font-bold text-slate-400">Estimation Confidence</p>
-                <p className="text-xs font-bold text-emerald-400 mt-2">
-                  {result.confidence_of_estimate || (result.converged ? "High (Converged)" : "Moderate (Pool Exhausted)")}
+              {/* Estimation Confidence */}
+              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
+                <p className="text-[10px] uppercase font-mono text-slate-400">Confidence</p>
+                <p className="text-xs font-semibold text-slate-200 mt-2">
+                  {result.confidence_of_estimate || (result.converged ? "Converged" : "Standard")}
                 </p>
               </div>
 
               {/* Status */}
-              <div className="p-3 rounded-xl bg-slate-900/60 border border-white/[0.08]">
-                <p className="text-[10px] uppercase font-bold text-slate-400">Cadre Standard</p>
+              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
+                <p className="text-[10px] uppercase font-mono text-slate-400">Cadre Standard</p>
                 <p
-                  className={`text-xs font-bold uppercase tracking-wider mt-2 px-2 py-0.5 rounded-full border inline-block ${
+                  className={`text-xs font-mono font-bold uppercase mt-2 px-2 py-0.5 rounded border inline-block ${
                     (result.score_percent || result.score) >= 60
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                      : "bg-rose-500/10 text-rose-400 border-rose-500/20"
+                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
+                      : "bg-rose-500/10 text-rose-300 border-rose-500/25"
                   }`}
                 >
-                  {(result.score_percent || result.score) >= 60 ? "Standard Met" : "Needs Review"}
+                  {(result.score_percent || result.score) >= 60 ? "Met" : "Deficit"}
                 </p>
               </div>
             </div>
 
-            {/* Questions by Difficulty Level Breakdown */}
+            {/* Questions by Difficulty Breakdown */}
             {result.difficulty_distribution && (
-              <div className="mt-6 p-4 rounded-xl bg-slate-900/50 border border-white/[0.08] max-w-xl mx-auto">
-                <p className="text-xs font-semibold text-slate-300 mb-3 text-left">
-                  Items Answered Across Difficulty Spectrum (CAT Routing):
+              <div className="mt-5 p-3.5 rounded-md sovereign-well max-w-xl mx-auto">
+                <p className="text-xs font-medium text-slate-300 mb-2.5 text-left font-mono">
+                  ITEM ROUTING DISTRIBUTION:
                 </p>
                 <div className="grid grid-cols-5 gap-2">
                   {[1, 2, 3, 4, 5].map((lvl) => {
                     const count = result.difficulty_distribution[lvl] || 0;
                     return (
-                      <div key={lvl} className="p-2 rounded-lg bg-white/[0.03] border border-white/[0.06] text-center">
+                      <div key={lvl} className="p-2 rounded bg-[#0b1424] border border-white/[0.06] text-center font-mono">
                         <p className="text-[10px] text-slate-400">Lvl {lvl}</p>
-                        <p className="text-base font-display font-extrabold text-white mt-0.5 font-mono">{count}</p>
-                        <p className="text-[9px] text-slate-400">item{count !== 1 ? "s" : ""}</p>
+                        <p className="text-sm font-bold text-white mt-0.5 num-tabular">{count}</p>
                       </div>
                     );
                   })}
@@ -692,58 +696,56 @@ export default function QuizPage() {
               </div>
             )}
 
-            <div className="mt-8 flex items-center justify-center gap-3">
+            <div className="mt-7 flex items-center justify-center gap-3">
               <button
                 onClick={() => navigate("/")}
-                className="px-4 py-2 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 font-bold text-xs hover:brightness-110 shadow-lg shadow-teal-500/20 transition-all"
+                className="btn-primary text-xs py-2 px-4"
               >
-                View Updated Passbook
+                View Passbook
               </button>
               <button
                 onClick={reset}
-                className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-slate-900 text-slate-300 hover:text-white border border-white/10 text-xs font-semibold transition-colors"
+                className="btn-secondary text-xs py-2 px-3 gap-1.5"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                <span>Take Another Assessment</span>
+                <span>Retake / New Test</span>
               </button>
             </div>
           </div>
 
           {/* Breakdown per question */}
-          <div className="p-6 rounded-2xl glass-panel space-y-4">
-            <h3 className="font-display font-bold text-sm text-white mb-2">
-              Performance Review & Rationales
+          <div className="p-5 sm:p-6 rounded-lg sovereign-card space-y-3.5">
+            <h3 className="font-display font-semibold text-sm text-white mb-2">
+              Performance Review & Item Rationales
             </h3>
 
             {result.breakdown?.map((item, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-xl bg-slate-900/50 border border-white/[0.06] text-xs space-y-2"
+                className="p-3.5 rounded-md bg-[#070d18] border border-white/[0.06] text-xs space-y-1.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <div className="flex items-center gap-2 mb-1">
-                      <span className="px-2 py-0.5 rounded bg-slate-800 text-[9px] font-bold text-teal-300 border border-white/10">
-                        Difficulty Level {item.difficulty || 3}
-                      </span>
-                    </div>
-                    <p className="font-semibold text-slate-200">
+                    <span className="px-1.5 py-0.2 rounded bg-white/[0.05] text-[10px] font-mono text-emerald-400 border border-white/10 mb-1 inline-block">
+                      Level {item.difficulty || 3}
+                    </span>
+                    <p className="font-medium text-slate-200 mt-0.5">
                       {idx + 1}. {item.question}
                     </p>
                   </div>
                   {item.is_correct ? (
-                    <span className="flex items-center gap-1 text-emerald-400 shrink-0 font-medium text-[11px]">
+                    <span className="flex items-center gap-1 text-emerald-400 shrink-0 font-mono text-[11px]">
                       <CheckCircle2 className="w-3.5 h-3.5" /> Correct
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-rose-400 shrink-0 font-medium text-[11px]">
+                    <span className="flex items-center gap-1 text-rose-400 shrink-0 font-mono text-[11px]">
                       <XCircle className="w-3.5 h-3.5" /> Incorrect
                     </span>
                   )}
                 </div>
 
                 {item.explanation && (
-                  <p className="text-slate-400 text-[11px] leading-relaxed pl-2 border-l border-teal-400/30">
+                  <p className="text-slate-400 text-[11px] leading-relaxed pl-2.5 border-l border-emerald-500/40 mt-2">
                     {item.explanation}
                   </p>
                 )}

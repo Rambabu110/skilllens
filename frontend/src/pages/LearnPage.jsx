@@ -107,130 +107,124 @@ export default function LearnPage() {
   const displayedRecs = isGuest ? DEMO_MODULES : recs;
 
   return (
-    <div className="space-y-8 pb-12">
+    <div className="space-y-7 pb-12">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/[0.08] pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display font-extrabold text-2xl md:text-3xl text-white tracking-tight">
-              Recommended Learning Pathways
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-display font-bold text-2xl text-white tracking-tight">
+              Curated Learning Pathways
             </h1>
-            <span className="px-2 py-0.5 rounded-md bg-teal-400/10 text-teal-300 border border-teal-400/20 text-[10px] font-bold uppercase tracking-wider">
-              iGOT Simulated Catalog
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[10px] font-mono font-semibold uppercase tracking-wider">
+              iGOT National Catalog
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Curated training modules mapped to your exact FRAC competency deficits with AI-generated selection rationales.
+          <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            Targeted training units mapped directly to verified FRAC competency deficits with mathematical matching rationales.
           </p>
         </div>
 
-        <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/[0.08] text-xs text-slate-300 self-start md:self-auto">
-          <Sparkles className="w-3.5 h-3.5 text-teal-400" />
-          <span>{isGuest ? "Sample" : displayedRecs.length} Pathways Available</span>
+        <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#0b1424] border border-white/[0.08] text-xs text-slate-300 font-mono self-start md:self-auto">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+          <span>{isGuest ? "Reference" : displayedRecs.length} Units Available</span>
         </div>
       </div>
 
       {/* Guest Banner */}
       {isGuest && (
-        <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-slate-900/50 to-slate-900/40 border border-teal-400/20 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-4 rounded-lg bg-[#0c1629] border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-400 shrink-0">
-              <BookOpen className="w-5 h-5" />
+            <div className="w-8 h-8 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <BookOpen className="w-4 h-4" />
             </div>
             <div>
-              <p className="text-sm font-semibold text-white">Showing sample modules — Sign in for personalized pathways</p>
-              <p className="text-xs text-slate-400 mt-0.5">
-                Your pathways are tailored to your exact FRAC competency gaps after authentication.
+              <p className="text-xs font-semibold text-white">Reference Coursework Catalog</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Displaying sample units for Junior Statistical Officer cadre. Authenticate to unlock personalized deficit-targeted pathways.
               </p>
             </div>
           </div>
           <button
             onClick={() => openAuthModal()}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 font-semibold text-xs shadow-lg shadow-teal-500/20 hover:brightness-110 transition-all shrink-0"
+            className="btn-primary text-xs py-1.5 px-3 shrink-0"
           >
             <LogIn className="w-3.5 h-3.5" />
-            <span>Sign In / Register</span>
+            <span>Sign In</span>
           </button>
         </div>
       )}
 
       {!isGuest && displayedRecs.length === 0 ? (
-        <div className="p-12 rounded-2xl glass-panel text-center max-w-lg mx-auto">
-          <CheckCircle className="w-12 h-12 text-emerald-400 mx-auto mb-3" />
-          <h3 className="text-base font-semibold text-white">All Competencies Met</h3>
+        <div className="p-10 rounded-lg sovereign-card text-center max-w-lg mx-auto">
+          <CheckCircle className="w-10 h-10 text-emerald-400 mx-auto mb-2.5" />
+          <h3 className="text-sm font-semibold text-white">Cadre Standards Met</h3>
           <p className="text-xs text-slate-400 mt-1">
-            No critical gaps detected for your current position. You can still take custom document quizzes via the Assess tab.
+            No critical competency deficits detected. Continue with self-directed assessments or technical viva verification.
           </p>
         </div>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {displayedRecs.map((r) => {
             const isDirect = r.match_type === "rule";
 
             return (
               <div
                 key={r.id || r.module.id}
-                className="p-6 rounded-2xl glass-panel flex flex-col justify-between group hover:border-teal-400/40 transition-all duration-300 relative overflow-hidden"
+                className="p-5 sovereign-card flex flex-col justify-between group transition-colors duration-150 relative"
               >
-                {/* Subtle top accent gradient */}
-                <div className="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-transparent via-teal-400/30 to-transparent group-hover:via-teal-400 transition-all" />
-
                 {/* Demo badge */}
                 {r.isDemo && (
-                  <div className="absolute top-3 right-3 px-2 py-0.5 rounded-full bg-slate-800/80 border border-white/10 text-[9px] font-bold text-slate-500 uppercase tracking-wider">
+                  <div className="absolute top-3 right-3 px-1.5 py-0.2 rounded bg-white/[0.04] border border-white/10 text-[9px] font-mono font-medium text-slate-400">
                     Sample
                   </div>
                 )}
 
                 <div>
                   {/* Top Meta Tags */}
-                  <div className="flex items-center justify-between gap-2 mb-3">
+                  <div className="flex items-center justify-between gap-2 mb-2.5 pr-14">
                     <span
-                      className={`text-[10px] font-bold uppercase px-2.5 py-0.5 rounded-full border ${
+                      className={`text-[10px] font-mono uppercase px-2 py-0.5 rounded border font-semibold ${
                         isDirect
-                          ? "bg-teal-400/10 text-teal-300 border-teal-400/30"
-                          : "bg-amber-400/10 text-amber-300 border-amber-400/30"
+                          ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/25"
+                          : "bg-amber-500/10 text-amber-300 border-amber-500/25"
                       }`}
                     >
-                      {isDirect ? "Direct FRAC Match" : `Semantic Match (${(r.score * 100).toFixed(0)}%)`}
+                      {isDirect ? "Direct FRAC Rule" : `Semantic (${(r.score * 100).toFixed(0)}%)`}
                     </span>
 
-                    <div className="flex items-center gap-2 text-xs text-slate-400">
+                    <div className="flex items-center gap-2 text-xs text-slate-400 font-mono">
                       <span className="flex items-center gap-1">
-                        <Clock className="w-3 h-3 text-slate-500" />
+                        <Clock className="w-3 h-3 text-slate-400" />
                         {r.module.duration_minutes}m
                       </span>
                       <span>·</span>
-                      <span className="px-1.5 py-0.5 rounded bg-white/[0.05] text-[10px] font-medium text-slate-300">
-                        Level {r.module.level}
+                      <span className="text-slate-300">
+                        L{r.module.level}
                       </span>
                     </div>
                   </div>
 
                   {/* Title & Description */}
-                  <h3 className="text-base font-bold text-white group-hover:text-teal-300 transition-colors">
+                  <h3 className="text-sm font-semibold text-white group-hover:text-emerald-300 transition-colors">
                     {r.module.title}
                   </h3>
-                  <p className="text-xs text-slate-400 mt-2 leading-relaxed line-clamp-3">
+                  <p className="text-xs text-slate-400 mt-1.5 leading-relaxed line-clamp-3">
                     {r.module.description}
                   </p>
 
                   {/* AI Rationale Callout */}
                   {r.rationale && (
-                    <div className="mt-4 p-3 rounded-xl bg-slate-900/70 border border-teal-400/15 relative">
-                      <div className="flex items-start gap-2">
-                        <Sparkles className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
-                        <p className="text-[11px] text-teal-200/90 italic leading-relaxed">
-                          "{r.rationale}"
-                        </p>
-                      </div>
+                    <div className="mt-3.5 p-2.5 rounded-md sovereign-well border-l-2 border-emerald-400">
+                      <p className="text-[11px] text-slate-300 italic leading-snug">
+                        "{r.rationale}"
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* Bottom Action Footer */}
-                <div className="mt-6 pt-4 border-t border-white/[0.06] flex items-center justify-between">
-                  <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                <div className="mt-5 pt-3 border-t border-white/[0.06] flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-[11px] text-slate-400 flex items-center gap-1.5 font-mono">
                     <ShieldCheck className="w-3.5 h-3.5 text-emerald-400" />
                     <span>iGOT Accredited</span>
                   </span>
@@ -249,10 +243,10 @@ export default function LearnPage() {
                         });
                       }
                     }}
-                    className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg bg-teal-400/15 hover:bg-teal-400 text-teal-300 hover:text-slate-950 border border-teal-400/30 text-xs font-semibold transition-all shadow-sm group-hover:shadow-teal-500/20"
+                    className="btn-primary text-xs py-1.5 px-3 gap-1.5"
                   >
-                    <Zap className="w-3.5 h-3.5" />
-                    <span>{isGuest ? "Sign in & Generate Quiz" : "Generate AI Quiz"}</span>
+                    <Zap className="w-3 h-3" />
+                    <span>{isGuest ? "Sign In & Test" : "Skill Assessment"}</span>
                     <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>

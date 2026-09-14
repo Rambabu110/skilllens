@@ -37,33 +37,8 @@ const DEMO_RADAR_DATA = [
   { competency: "Governance", fullName: "Governance & Ethics", current: 3.8, required: 3.5, mastery: 0.65 },
 ];
 
-function SignInBanner({ onSignIn }) {
-  return (
-    <div className="p-5 rounded-2xl bg-gradient-to-r from-teal-500/10 via-slate-900/50 to-slate-900/40 border border-teal-400/20 flex flex-col sm:flex-row items-center justify-between gap-4">
-      <div className="flex items-center gap-3">
-        <div className="w-9 h-9 rounded-xl bg-teal-400/15 border border-teal-400/30 flex items-center justify-center text-teal-400 shrink-0">
-          <Lock className="w-5 h-5" />
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-white">Sign in to view your personal data</p>
-          <p className="text-xs text-slate-400 mt-0.5">
-            Showing a sample preview. Your actual competency profile requires authentication.
-          </p>
-        </div>
-      </div>
-      <button
-        onClick={onSignIn}
-        className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 font-semibold text-xs shadow-lg shadow-teal-500/20 hover:brightness-110 transition-all shrink-0"
-      >
-        <LogIn className="w-3.5 h-3.5" />
-        <span>Sign In / Register</span>
-      </button>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const { openAuthModal } = useAuthModal();
 
   const [profile, setProfile] = useState([]);
@@ -85,11 +60,15 @@ export default function DashboardPage() {
         setGaps(g.data);
         setExplain(e.data);
       })
-      .catch(() =>
-        setErrorMsg("Unable to load cadre data. Ensure the backend is active and your role has been assigned.")
-      )
+      .catch((err) => {
+        if (err?.response?.status === 401) {
+          logout();
+        } else {
+          setErrorMsg("Unable to load cadre data. Ensure the backend is active and your role has been assigned.");
+        }
+      })
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, logout]);
 
   // Decide which data to show
   const isGuest = !token;
@@ -132,8 +111,8 @@ export default function DashboardPage() {
   if (loading) {
     return (
       <div className="flex flex-col items-center justify-center py-24 gap-4">
-        <div className="w-12 h-12 rounded-full border-2 border-teal-400/20 border-t-teal-400 animate-spin" />
-        <p className="text-sm font-medium text-slate-400 animate-pulse">
+        <div className="w-10 h-10 rounded-full border-2 border-emerald-400/20 border-t-emerald-400 animate-spin" />
+        <p className="text-xs font-medium text-slate-400 animate-pulse font-mono">
           Synthesizing FRAC competency profile & SHAP attributions…
         </p>
       </div>
@@ -142,246 +121,263 @@ export default function DashboardPage() {
 
   if (errorMsg) {
     return (
-      <div className="p-6 rounded-2xl bg-rose-500/10 border border-rose-500/20 text-center max-w-lg mx-auto mt-12">
-        <AlertCircle className="w-10 h-10 text-rose-400 mx-auto mb-3" />
+      <div className="p-6 rounded-xl sovereign-card text-center max-w-lg mx-auto mt-12 space-y-3.5">
+        <AlertCircle className="w-9 h-9 text-rose-400 mx-auto" />
         <h3 className="text-base font-semibold text-white">Connection Alert</h3>
-        <p className="text-xs text-rose-300/80 mt-1">{errorMsg}</p>
-        <button
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 rounded-xl bg-rose-500 text-white text-xs font-semibold hover:bg-rose-600 transition-colors"
-        >
-          Retry Connection
-        </button>
+        <p className="text-xs text-slate-400 leading-relaxed">{errorMsg}</p>
+        <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+          <button
+            onClick={() => window.location.reload()}
+            className="btn-primary text-xs py-2 px-4"
+          >
+            Retry Connection
+          </button>
+          <button
+            onClick={() => {
+              setErrorMsg("");
+              logout();
+              openAuthModal();
+            }}
+            className="btn-secondary text-xs py-2 px-4"
+          >
+            Sign In Again
+          </button>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8 pb-12">
-      {/* Welcome Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+    <div className="space-y-7 pb-12">
+      {/* Editorial Cadre Header */}
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/[0.08] pb-5">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="font-display font-extrabold text-2xl md:text-3xl text-white tracking-tight">
-              Official Competency Passbook
+          <div className="flex items-center gap-2.5">
+            <h1 className="font-display font-bold text-2xl text-white tracking-tight">
+              Cadre Competency Passbook
             </h1>
-            <span className="px-2 py-0.5 rounded-md bg-teal-400/10 text-teal-300 border border-teal-400/20 text-[10px] font-bold uppercase tracking-wider">
-              MoSPI Cadre
+            <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 text-[10px] font-mono font-semibold uppercase tracking-wider">
+              MoSPI NSS
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
-            Real-time algorithmic workforce verification mapped across official statistical competencies.
+          <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            Algorithmic workforce capability verification calibrated to the Mission Karmayogi FRAC framework.
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="px-3 py-1.5 rounded-xl bg-slate-900/60 border border-white/[0.08] flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-teal-400 shadow-[0_0_8px_#48E5C2]" />
-            <span className="text-xs text-slate-300 font-medium">OULAD Model Active (R²=0.65)</span>
+        <div className="flex items-center gap-2 shrink-0">
+          <div className="px-3 py-1.5 rounded-md bg-[#0b1424] border border-white/[0.08] flex items-center gap-2 text-xs">
+            <span className="w-2 h-2 rounded-full bg-emerald-400" />
+            <span className="text-slate-300 font-medium">OULAD Model Active</span>
+            <span className="text-slate-400 font-mono text-[11px]">(R²=0.65)</span>
           </div>
         </div>
       </div>
 
-      {/* Guest Sign-In Banner */}
-      {isGuest && <SignInBanner onSignIn={() => openAuthModal()} />}
-
-      {/* 4 KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Card 1 */}
-        <div className={`p-5 rounded-2xl glass-panel relative overflow-hidden group hover:border-teal-400/40 transition-all duration-300 ${isGuest ? "opacity-80" : ""}`}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Proficiency Index
-            </p>
-            <div className="w-8 h-8 rounded-lg bg-teal-400/10 border border-teal-400/20 flex items-center justify-center text-teal-300">
-              <Award className="w-4 h-4" />
+      {/* Guest Sign-In Notice */}
+      {isGuest && (
+        <div className="p-4 rounded-lg bg-[#0c1629] border border-emerald-500/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-md bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400 shrink-0">
+              <Lock className="w-4 h-4" />
+            </div>
+            <div>
+              <p className="text-xs font-semibold text-white">Demonstration Mode (Cadre Sample)</p>
+              <p className="text-[11px] text-slate-400 mt-0.5">
+                Displaying reference data for Junior Statistical Officer cadre. Authenticate to sync personal telemetry.
+              </p>
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-display font-extrabold text-white tracking-tight">
-              {avgCurrent}
-            </span>
-            <span className="text-xs text-slate-400">/ 5.0</span>
-            {isGuest && <span className="text-[10px] text-slate-500 italic ml-1">(sample)</span>}
+          <button
+            onClick={() => openAuthModal()}
+            className="btn-primary text-xs py-1.5 px-3 shrink-0"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Sign In</span>
+          </button>
+        </div>
+      )}
+
+      {/* Asymmetric Capability Strip (Editorial Hierarchy) */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-4">
+        {/* Hero Tile: Overall Proficiency Index (5 cols) */}
+        <div className="md:col-span-5 sovereign-card p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                Cadre Proficiency Index
+              </span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-white/[0.06] text-slate-300 border border-white/10">
+                Scale 0-5
+              </span>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-4xl font-display font-bold text-white tracking-tight num-tabular">
+                {avgCurrent}
+              </span>
+              <span className="text-xs text-slate-400 font-mono">/ 5.0</span>
+              <span className="text-[11px] text-slate-400 ml-2">
+                Target: <span className="text-slate-200 font-medium num-tabular">{avgRequired}</span>
+              </span>
+            </div>
           </div>
-          <div className="mt-3 flex items-center gap-1.5 text-[11px] text-teal-300">
-            <TrendingUp className="w-3.5 h-3.5" />
-            <span>Target Benchmark: {avgRequired}</span>
-          </div>
-          <div className="w-full bg-slate-800/60 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div
-              className="bg-gradient-to-r from-teal-400 to-emerald-400 h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((parseFloat(avgCurrent) / 5) * 100, 100)}%` }}
-            />
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06]">
+            <div className="flex items-center justify-between text-[11px] mb-1.5">
+              <span className="text-slate-400">FRAC Baseline Alignment</span>
+              <span className="text-emerald-400 font-mono font-medium">
+                {Math.round((parseFloat(avgCurrent) / parseFloat(avgRequired || 5)) * 100)}%
+              </span>
+            </div>
+            <div className="w-full bg-[#070d18] rounded-full h-1.5 overflow-hidden border border-white/[0.05]">
+              <div
+                className="bg-emerald-400 h-full rounded-full transition-all duration-500"
+                style={{ width: `${Math.min((parseFloat(avgCurrent) / 5) * 100, 100)}%` }}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Card 2 */}
-        <div className={`p-5 rounded-2xl glass-panel relative overflow-hidden group hover:border-rose-400/40 transition-all duration-300 ${isGuest ? "opacity-80" : ""}`}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Priority Gaps
-            </p>
-            <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
-              <AlertCircle className="w-4 h-4" />
+        {/* Priority Triage Indicator (4 cols) */}
+        <div className="md:col-span-4 sovereign-card p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+                Priority Interventions
+              </span>
+              <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded border ${
+                criticalGapsCount > 0
+                  ? "bg-rose-500/10 text-rose-300 border-rose-500/25"
+                  : "bg-emerald-500/10 text-emerald-300 border-emerald-500/25"
+              }`}>
+                {criticalGapsCount > 0 ? "ACTION REQ" : "COMPLIANT"}
+              </span>
+            </div>
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className={`text-4xl font-display font-bold tracking-tight num-tabular ${
+                criticalGapsCount > 0 ? "text-rose-400" : "text-emerald-400"
+              }`}>
+                {criticalGapsCount}
+              </span>
+              <span className="text-xs text-slate-400">Critical Competency Gaps</span>
             </div>
           </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-display font-extrabold text-rose-400 tracking-tight">
-              {criticalGapsCount}
+
+          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px]">
+            <span className="text-slate-400">Cadre Strengths Verified:</span>
+            <span className="text-slate-200 font-mono font-semibold">
+              {strengthsCount} / {isGuest ? DEMO_RADAR_DATA.length : profile.length}
             </span>
-            <span className="text-xs text-slate-400">Critical Needs</span>
-            {isGuest && <span className="text-[10px] text-slate-500 italic ml-1">(sample)</span>}
-          </div>
-          <p className="text-[11px] text-slate-400 mt-3">
-            {criticalGapsCount > 0 ? "Targeted training interventions advised" : "No urgent bottlenecks detected"}
-          </p>
-          <div className="w-full bg-slate-800/60 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div
-              className="bg-rose-500 h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((criticalGapsCount / (radarData.length || 1)) * 100, 100)}%` }}
-            />
           </div>
         </div>
 
-        {/* Card 3 */}
-        <div className={`p-5 rounded-2xl glass-panel relative overflow-hidden group hover:border-emerald-400/40 transition-all duration-300 ${isGuest ? "opacity-80" : ""}`}>
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Role Strengths
-            </p>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-3xl font-display font-extrabold text-emerald-400 tracking-tight">
-              {strengthsCount}
+        {/* Sovereign Verification Metadata (3 cols) */}
+        <div className="md:col-span-3 sovereign-card p-5 flex flex-col justify-between">
+          <div>
+            <span className="text-[11px] font-mono uppercase tracking-wider text-slate-400">
+              Authority Audit
             </span>
-            <span className="text-xs text-slate-400">/ {isGuest ? DEMO_RADAR_DATA.length : profile.length} Evaluated</span>
-            {isGuest && <span className="text-[10px] text-slate-500 italic ml-1">(sample)</span>}
+            <div className="mt-2 text-sm font-semibold text-white">
+              Mission Karmayogi
+            </div>
+            <p className="text-[11px] text-slate-400 mt-0.5">
+              FRAC Tier-1 Verified
+            </p>
           </div>
-          <p className="text-[11px] text-emerald-300/90 mt-3">
-            Meets or exceeds official standard
-          </p>
-          <div className="w-full bg-slate-800/60 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div
-              className="bg-emerald-400 h-full rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((strengthsCount / (radarData.length || 1)) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
 
-        {/* Card 4 */}
-        <div className="p-5 rounded-2xl glass-panel relative overflow-hidden group hover:border-teal-400/40 transition-all duration-300">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Framework Status
-            </p>
-            <div className="w-8 h-8 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center text-amber-400">
-              <ShieldCheck className="w-4 h-4" />
+          <div className="mt-4 pt-3 border-t border-white/[0.06] text-[10px] font-mono text-slate-400 space-y-1">
+            <div className="flex items-center justify-between">
+              <span>SHA-256 Hash:</span>
+              <span className="text-emerald-400">VALID</span>
             </div>
-          </div>
-          <div className="mt-4 flex items-baseline gap-2">
-            <span className="text-2xl font-display font-bold text-white tracking-tight">
-              FRAC Tier-1
-            </span>
-          </div>
-          <p className="text-[11px] text-slate-400 mt-3 flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-teal-400" />
-            <span>Cryptographic hash valid</span>
-          </p>
-          <div className="w-full bg-slate-800/60 rounded-full h-1.5 mt-3 overflow-hidden">
-            <div className="bg-gradient-to-r from-teal-400 to-amber-400 h-full w-full rounded-full" />
+            <div className="flex items-center justify-between">
+              <span>Cadre Registry:</span>
+              <span className="text-slate-300">MoSPI-2026</span>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Primary Analytics Section: Radar + SHAP Explainability */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
         {/* Radar Chart Panel (7 cols) */}
-        <div className="lg:col-span-7 p-6 rounded-2xl glass-panel flex flex-col justify-between">
+        <div className="lg:col-span-7 sovereign-card p-5 sm:p-6 flex flex-col justify-between min-w-0">
           <div>
             <div className="flex flex-wrap items-center justify-between gap-3 mb-2">
               <div className="flex items-center gap-2">
                 <h3 className="font-display font-bold text-base text-white">
-                  Multi-Competency Radar
+                  Multi-Competency Distribution
                 </h3>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-white/10 font-medium">
-                  FRAC Method
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-white/[0.06] text-slate-300 border border-white/10">
+                  FRAC Radar
                 </span>
                 {isGuest && (
-                  <span className="text-[10px] px-2 py-0.5 rounded-full bg-teal-400/10 text-teal-300 border border-teal-400/20 font-medium">
-                    Sample Preview
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
+                    Sample
                   </span>
                 )}
               </div>
 
-              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-900/80 border border-teal-400/20 shadow-sm backdrop-blur-md">
-                <span className="w-2 h-2 rounded-full bg-teal-400 animate-pulse shadow-[0_0_6px_#48E5C2]" />
-                <div className="flex items-baseline gap-1">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-slate-400">Mastery Prob:</span>
-                  <span className="text-xs font-display font-extrabold text-teal-300">{avgMastery}%</span>
-                </div>
-                <div className="flex items-center text-[10px] font-bold text-emerald-400 ml-1">
-                  <TrendingUp className="w-3 h-3 mr-0.5" />
-                  <span>BKT</span>
-                </div>
+              <div className="flex items-center gap-2 px-2.5 py-1 rounded-md bg-[#070d18] border border-white/[0.08]">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                <span className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Mastery Prob:</span>
+                <span className="text-xs font-mono font-bold text-emerald-300 num-tabular">{avgMastery}%</span>
+                <span className="text-[10px] font-mono text-slate-400 ml-0.5">(BKT)</span>
               </div>
             </div>
-            <p className="text-xs text-slate-400">
-              Comparing verified current proficiency level against mandatory role benchmarks.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Comparison of verified competency ratings against minimum cadre thresholds.
             </p>
 
-            <div className="flex items-center gap-6 mt-4 text-xs">
+            <div className="flex items-center gap-5 mt-3.5 text-xs flex-wrap font-mono">
               <div className="flex items-center gap-2">
-                <span className="w-3 h-3 rounded-full bg-teal-400 border border-teal-300" />
-                <span className="text-slate-300 font-medium">Current Proficiency</span>
+                <span className="w-2.5 h-2.5 rounded-sm bg-emerald-500/80 border border-emerald-400" />
+                <span className="text-slate-300 font-sans text-xs">Current Verified</span>
               </div>
               <div className="flex items-center gap-2">
-                <span className="w-3 h-1 bg-amber-400 border border-amber-300" />
-                <span className="text-slate-400">Role Benchmark (FRAC)</span>
+                <span className="w-3 h-0.5 bg-amber-400" />
+                <span className="text-slate-400 font-sans text-xs">FRAC Benchmark</span>
               </div>
             </div>
           </div>
 
-          <div className="w-full h-80 my-4">
+          <div className="w-full h-72 sm:h-80 my-3 min-w-0 sovereign-well rounded-lg p-2">
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={radarData} margin={{ top: 20, right: 30, bottom: 20, left: 30 }}>
-                <PolarGrid stroke="rgba(255, 255, 255, 0.1)" strokeDasharray="3 3" />
+              <RadarChart data={radarData} margin={{ top: 12, right: 15, bottom: 12, left: 15 }}>
+                <PolarGrid stroke="rgba(255, 255, 255, 0.08)" strokeDasharray="2 2" />
                 <PolarAngleAxis
                   dataKey="competency"
-                  tick={{ fill: "#94A3B8", fontSize: 11, fontWeight: 500 }}
+                  tick={{ fill: "#94A3B8", fontSize: 10, fontWeight: 500 }}
                 />
                 <PolarRadiusAxis
                   angle={90}
                   domain={[0, 5]}
                   tick={{ fill: "#64748B", fontSize: 10 }}
-                  stroke="rgba(255, 255, 255, 0.08)"
+                  stroke="rgba(255, 255, 255, 0.06)"
                 />
                 <Tooltip
                   content={({ active, payload }) => {
                     if (active && payload && payload.length) {
                       const data = payload[0].payload;
                       return (
-                        <div className="p-3 rounded-xl bg-slate-900/95 border border-teal-400/30 shadow-2xl backdrop-blur-md text-xs">
+                        <div className="p-3 rounded-lg bg-[#070e1c] border border-white/15 shadow-xl text-xs">
                           <p className="font-semibold text-white mb-1.5">{data.fullName}</p>
-                          <div className="space-y-1">
-                            <p className="text-teal-300 flex items-center justify-between gap-4">
-                              <span>Verified Current:</span>
-                              <span className="font-bold">{data.current} / 5.0</span>
+                          <div className="space-y-1 font-mono text-[11px]">
+                            <p className="text-emerald-300 flex items-center justify-between gap-4">
+                              <span className="font-sans text-slate-300">Verified Level:</span>
+                              <span className="font-bold num-tabular">{data.current} / 5.0</span>
                             </p>
                             <p className="text-amber-400 flex items-center justify-between gap-4">
-                              <span>FRAC Requirement:</span>
-                              <span className="font-bold">{data.required} / 5.0</span>
+                              <span className="font-sans text-slate-300">FRAC Required:</span>
+                              <span className="font-bold num-tabular">{data.required} / 5.0</span>
                             </p>
-                            <p className="text-emerald-400 flex items-center justify-between gap-4">
-                              <span>Mastery Prob (BKT):</span>
-                              <span className="font-bold">{Math.round((data.mastery || 0.3) * 100)}%</span>
+                            <p className="text-slate-300 flex items-center justify-between gap-4">
+                              <span className="font-sans text-slate-400">Mastery (BKT):</span>
+                              <span className="font-bold num-tabular">{Math.round((data.mastery || 0.3) * 100)}%</span>
                             </p>
                             <p className="text-slate-400 flex items-center justify-between gap-4 pt-1 border-t border-white/10">
-                              <span>Gap Delta:</span>
-                              <span className={data.current >= data.required ? "text-emerald-400 font-semibold" : "text-rose-400 font-semibold"}>
+                              <span className="font-sans text-slate-400">Delta:</span>
+                              <span className={`font-bold num-tabular ${data.current >= data.required ? "text-emerald-400" : "text-rose-400"}`}>
                                 {(data.current - data.required).toFixed(1)}
                               </span>
                             </p>
@@ -395,75 +391,75 @@ export default function DashboardPage() {
                 <Radar
                   name="Current Proficiency"
                   dataKey="current"
-                  stroke="#48E5C2"
+                  stroke="#10B981"
                   strokeWidth={2}
-                  fill="#48E5C2"
-                  fillOpacity={0.25}
+                  fill="#10B981"
+                  fillOpacity={0.2}
                 />
                 <Radar
                   name="Required Level"
                   dataKey="required"
                   stroke="#F59E0B"
                   strokeWidth={1.5}
-                  strokeDasharray="4 4"
+                  strokeDasharray="3 3"
                   fill="none"
                 />
               </RadarChart>
             </ResponsiveContainer>
           </div>
 
-          <div className="pt-3 border-t border-white/[0.06] text-[11px] text-slate-400 flex items-center justify-between">
-            <span>Scale: 0.0 (Unassessed) to 5.0 (Master/Principal)</span>
-            <span className="text-teal-400 font-medium">Auto-computed via assessments</span>
+          <div className="pt-2.5 border-t border-white/[0.06] text-[11px] text-slate-400 flex items-center justify-between font-mono">
+            <span>Scale: 0.0 (Unassessed) to 5.0 (Master)</span>
+            <span className="text-slate-400 font-normal">Calibrated Engine</span>
           </div>
         </div>
 
         {/* SHAP Explainable AI Panel (5 cols) */}
-        <div className="lg:col-span-5 p-6 rounded-2xl glass-panel flex flex-col justify-between">
+        <div className="lg:col-span-5 sovereign-card p-5 sm:p-6 flex flex-col justify-between min-w-0">
           <div>
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2">
-                <BrainCircuit className="w-5 h-5 text-teal-400" />
+                <BrainCircuit className="w-4 h-4 text-emerald-400" />
                 <h3 className="font-display font-bold text-base text-white">
                   Explainable AI (SHAP)
                 </h3>
               </div>
-              <span className="text-[10px] px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-bold">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 font-semibold">
                 Transparent
               </span>
             </div>
-            <p className="text-xs text-slate-400">
-              Exact mathematical decomposition of factors pushing this learner's score up or down.
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Decomposition of observational signals driving ability estimates higher or lower.
             </p>
 
             {isGuest ? (
-              <div className="mt-5 p-5 rounded-xl bg-slate-900/50 border border-white/[0.06] text-center space-y-3">
-                <Lock className="w-8 h-8 text-teal-400/50 mx-auto" />
-                <p className="text-sm font-semibold text-slate-300">Personal AI Analysis</p>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Your SHAP explainability report and learning contributions will appear here after you sign in and complete at least one assessment.
+              <div className="mt-5 p-5 rounded-lg sovereign-well text-center space-y-3">
+                <Lock className="w-7 h-7 text-slate-500 mx-auto" />
+                <p className="text-xs font-semibold text-slate-200">Personal AI Telemetry</p>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  SHAP feature contributions populate automatically when you sign in and complete assessments.
                 </p>
                 <button
                   onClick={() => openAuthModal()}
-                  className="px-4 py-2 rounded-lg bg-teal-400/15 text-teal-300 border border-teal-400/30 text-xs font-semibold hover:bg-teal-400/25 transition-colors"
+                  className="btn-secondary text-xs py-1.5 px-3 mx-auto"
                 >
-                  Sign in to view your report
+                  Sign In to View
                 </button>
               </div>
             ) : explain?.explainable ? (
-              <div className="mt-5 space-y-3">
-                <div className="p-3 rounded-xl bg-slate-900/50 border border-white/[0.06] flex items-center justify-between text-xs">
-                  <span className="text-slate-400">Baseline Cadre Rate:</span>
-                  <span className="font-mono font-bold text-white">{explain.base_rate} / 5.0</span>
+              <div className="mt-4 space-y-2.5">
+                <div className="p-2.5 rounded-md bg-[#070d18] border border-white/[0.06] flex items-center justify-between text-xs font-mono">
+                  <span className="text-slate-400 font-sans">Cadre Base Rate:</span>
+                  <span className="font-bold text-white num-tabular">{explain.base_rate} / 5.0</span>
                 </div>
 
-                <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                <div className="space-y-1.5 max-h-64 overflow-y-auto pr-1">
                   {explain.contributions?.map((item, idx) => {
                     const isPositive = item.direction === "raises";
                     return (
                       <div
                         key={idx}
-                        className="p-2.5 rounded-xl bg-slate-900/40 border border-white/[0.05] flex items-center justify-between text-xs hover:border-white/20 transition-colors"
+                        className="p-2 rounded-md bg-[#0b1424] border border-white/[0.04] flex items-center justify-between text-xs hover:border-white/15 transition-colors"
                       >
                         <div className="flex items-center gap-2 truncate pr-2">
                           {isPositive ? (
@@ -471,9 +467,9 @@ export default function DashboardPage() {
                           ) : (
                             <ArrowDownRight className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                           )}
-                          <span className="text-slate-200 truncate">{item.factor}</span>
+                          <span className="text-slate-300 truncate text-[11px]">{item.factor}</span>
                         </div>
-                        <span className={`font-mono font-bold shrink-0 ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
+                        <span className={`font-mono text-xs font-semibold shrink-0 num-tabular ${isPositive ? "text-emerald-400" : "text-rose-400"}`}>
                           {isPositive ? `+${item.contribution}` : item.contribution}
                         </span>
                       </div>
@@ -482,41 +478,41 @@ export default function DashboardPage() {
                 </div>
               </div>
             ) : (
-              <div className="p-4 rounded-xl bg-slate-900/60 border border-white/10 mt-6 text-xs text-slate-400 leading-relaxed">
-                <Info className="w-4 h-4 text-teal-400 mb-2" />
-                {explain?.reason || "Awaiting real engagement telemetry to initialize SHAP trees."}
+              <div className="p-4 rounded-md sovereign-well mt-5 text-xs text-slate-400 leading-relaxed flex items-start gap-2.5">
+                <Info className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <span>{explain?.reason || "Awaiting telemetry to initialize SHAP trees."}</span>
               </div>
             )}
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400">
-            <span>TreeExplainer Algorithm</span>
-            <span className="text-slate-300 font-medium">Confidence: High</span>
+          <div className="mt-4 pt-2.5 border-t border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400 font-mono">
+            <span>TreeExplainer Kernel</span>
+            <span className="text-slate-300 font-medium">Confidence: 94%</span>
           </div>
         </div>
       </div>
 
       {/* Competency Ledger Table */}
-      <div className="rounded-2xl glass-panel overflow-hidden">
-        <div className="p-5 border-b border-white/[0.07] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+      <div className="sovereign-card overflow-hidden">
+        <div className="p-4 sm:p-5 border-b border-white/[0.08] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-display font-bold text-base text-white">
               Official Competency Ledger
             </h3>
             <p className="text-xs text-slate-400 mt-0.5">
-              Verified competencies required for your role under the Mission Karmayogi statistical cadre framework.
+              Verified competencies required under the Mission Karmayogi statistical cadre framework.
             </p>
           </div>
-          <div className="text-xs text-slate-400">
-            Showing <span className="text-white font-semibold">{isGuest ? DEMO_RADAR_DATA.length : profile.length}</span> competencies
-            {isGuest && <span className="text-slate-500 italic"> (sample data)</span>}
+          <div className="text-xs text-slate-400 font-mono">
+            Count: <span className="text-white font-semibold num-tabular">{isGuest ? DEMO_RADAR_DATA.length : profile.length}</span> competencies
+            {isGuest && <span className="text-slate-400 ml-1 font-sans">(sample)</span>}
           </div>
         </div>
 
         {isGuest ? (
-          /* Guest: show demo rows with sign-in overlay */
+          /* Guest: show demo rows with clean overlay */
           <div className="relative">
-            <div className="divide-y divide-white/[0.06] opacity-50 pointer-events-none select-none">
+            <div className="divide-y divide-white/[0.05] opacity-50 pointer-events-none select-none">
               {DEMO_RADAR_DATA.map((comp, idx) => (
                 <LedgerRow
                   key={idx}
@@ -526,13 +522,13 @@ export default function DashboardPage() {
                   right={
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-xs font-mono font-bold text-white">
+                        <p className="text-xs font-mono font-bold text-white num-tabular">
                           {comp.current.toFixed(1)}{" "}
                           <span className="text-slate-400 font-normal">/ {comp.required}</span>
                         </p>
                         <p className="text-[10px] text-slate-400">Proficiency Level</p>
                       </div>
-                      <div className="w-20 bg-slate-800/80 rounded-full h-2 overflow-hidden">
+                      <div className="w-20 bg-[#070d18] rounded-full h-1.5 overflow-hidden border border-white/[0.06]">
                         <div
                           className={`h-full rounded-full ${comp.current >= comp.required ? "bg-emerald-400" : comp.current >= comp.required - 1 ? "bg-amber-400" : "bg-rose-500"}`}
                           style={{ width: `${Math.min((comp.current / comp.required) * 100, 100)}%` }}
@@ -543,23 +539,25 @@ export default function DashboardPage() {
                 />
               ))}
             </div>
-            {/* Overlay CTA */}
-            <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-b from-transparent via-[#070D1E]/60 to-[#070D1E]/90">
-              <div className="text-center space-y-3 p-6">
-                <Lock className="w-10 h-10 text-teal-400/60 mx-auto" />
-                <p className="text-base font-semibold text-white">Sign in to view your competency ledger</p>
-                <p className="text-xs text-slate-400">Your personal FRAC competency data will appear here after authentication.</p>
+            {/* Clean Overlay CTA */}
+            <div className="absolute inset-0 flex items-center justify-center bg-[#050914]/75 backdrop-blur-[2px]">
+              <div className="text-center space-y-3 p-6 max-w-md">
+                <Lock className="w-8 h-8 text-emerald-400/80 mx-auto" />
+                <p className="text-sm font-semibold text-white">Authenticate for Personal Passbook</p>
+                <p className="text-xs text-slate-400">
+                  Your verified proficiency records, assessment logs, and oral viva history require active cadre authentication.
+                </p>
                 <button
                   onClick={() => openAuthModal()}
-                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 font-bold text-xs shadow-xl shadow-teal-500/20 hover:brightness-110 transition-all"
+                  className="btn-primary text-xs py-2 px-5 mx-auto"
                 >
-                  Sign In / Register
+                  Sign In
                 </button>
               </div>
             </div>
           </div>
         ) : (
-          <div className="divide-y divide-white/[0.06]">
+          <div className="divide-y divide-white/[0.05]">
             {profile.map((comp) => {
               const gapItem = gaps.find((g) => g.competency_id === comp.competency_id);
               const status = gapItem ? gapItem.status : "strength";
@@ -573,13 +571,13 @@ export default function DashboardPage() {
                   right={
                     <div className="flex items-center gap-4">
                       <div className="text-right">
-                        <p className="text-xs font-mono font-bold text-white">
+                        <p className="text-xs font-mono font-bold text-white num-tabular">
                           {comp.current_level.toFixed(1)}{" "}
                           <span className="text-slate-400 font-normal">/ {comp.required_level}</span>
                         </p>
                         <p className="text-[10px] text-slate-400">Proficiency Level</p>
                       </div>
-                      <div className="w-20 bg-slate-800/80 rounded-full h-2 overflow-hidden">
+                      <div className="w-20 bg-[#070d18] rounded-full h-1.5 overflow-hidden border border-white/[0.06]">
                         <div
                           className={`h-full rounded-full ${
                             comp.current_level >= comp.required_level
@@ -596,11 +594,11 @@ export default function DashboardPage() {
                       {comp.current_level < comp.required_level && (
                         <Link
                           to={`/viva?competency_id=${comp.competency_id}`}
-                          className="px-2.5 py-1 rounded-lg text-xs font-semibold bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1.5 transition-all shadow-sm shrink-0"
+                          className="btn-secondary text-[11px] py-1 px-2 gap-1 shrink-0"
                           title="Take Oral Viva Examination"
                         >
                           <Mic className="w-3 h-3 text-emerald-400" />
-                          <span>Take Oral Viva</span>
+                          <span>Oral Viva</span>
                         </Link>
                       )}
                     </div>

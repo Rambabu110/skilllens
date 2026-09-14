@@ -32,29 +32,29 @@ export default function LedgerRow({ status, title, subtitle, right, children }) 
   const StatusIcon = config.icon;
 
   return (
-    <div className="group relative p-4 bg-slate-900/40 hover:bg-slate-900/80 border-b border-white/[0.06] last:border-b-0 transition-all duration-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+    <div className="group relative p-3.5 sm:p-4 bg-[#081020]/40 hover:bg-[#0d172e]/70 border-b border-white/[0.06] last:border-b-0 transition-colors duration-150 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
       {/* Left indicator accent strip */}
-      <div className={`absolute left-0 top-2 bottom-2 w-1 rounded-r-full ${config.accent} opacity-80 group-hover:opacity-100 transition-opacity`} />
+      <div className={`absolute left-0 top-2 bottom-2 w-1 rounded-r ${config.accent} opacity-80 group-hover:opacity-100 transition-opacity`} />
 
-      <div className="pl-2">
+      <div className="pl-2.5">
         <div className="flex items-center gap-2 flex-wrap">
-          <p className="text-sm font-semibold text-slate-100 group-hover:text-teal-300 transition-colors">
+          <p className="text-xs sm:text-sm font-semibold text-slate-100 group-hover:text-emerald-300 transition-colors">
             {title}
           </p>
-          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-medium border ${config.bg} ${config.text} ${config.border}`}>
+          <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono font-medium border ${config.bg} ${config.text} ${config.border}`}>
             <StatusIcon className="w-3 h-3" />
             {config.label}
           </span>
         </div>
         {subtitle && (
-          <p className="text-xs text-slate-400 mt-1 flex items-center gap-2">
+          <p className="text-[11px] text-slate-400 mt-0.5 flex items-center gap-2">
             {subtitle}
           </p>
         )}
-        {children && <div className="mt-1.5">{children}</div>}
+        {children && <div className="mt-1">{children}</div>}
       </div>
 
-      <div className="flex items-center gap-4 shrink-0 pl-2 sm:pl-0">
+      <div className="flex flex-wrap items-center gap-3 sm:gap-4 pl-2.5 sm:pl-0 sm:shrink-0">
         {right}
       </div>
     </div>

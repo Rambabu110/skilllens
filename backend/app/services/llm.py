@@ -103,7 +103,7 @@ def _call_gemini(prompt: str) -> str:
         raise RuntimeError("GEMINI_API_KEY not set. Add it to backend/.env")
 
     genai.configure(api_key=settings.GEMINI_API_KEY)
-    models_to_try = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-2.5-flash"]
+    models_to_try = ["gemini-flash-latest", "gemini-3.6-flash", "gemini-flash-lite-latest"]
     last_err = None
     for model_name in models_to_try:
         try:
@@ -162,30 +162,46 @@ def _call_groq(prompt: str) -> dict:
 
 
 def _call_llm(prompt: str) -> str:
-    provider = settings.LLM_PROVIDER.lower() if settings.LLM_PROVIDER else "gemini"
+    provider = settings.LLM_PROVIDER.lower() if settings.LLM_PROVIDER else "groq"
     if provider == "openai":
         return _call_openai(prompt)
 
-    # Provider chain: Gemini -> Groq
-    try:
-        text = _call_gemini(prompt)
-        if text and text.strip():
-            print("[LLM Provider] Served by Gemini")
-            return text
-        print("[LLM Provider] Gemini returned empty response, falling through to Groq...")
-    except Exception as e:
-        print(f"[LLM Provider] Gemini failed ({e}), falling through to Groq...")
+    if provider == "groq":
+        try:
+            text = _call_groq_raw(prompt)
+            if text and text.strip():
+                print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
+                return text
+            print("[LLM Provider] Groq returned empty response, falling through to Gemini...")
+        except Exception as e:
+            print(f"[LLM Provider] Groq failed ({e}), falling through to Gemini...")
+        try:
+            text = _call_gemini(prompt)
+            if text and text.strip():
+                print("[LLM Provider] Served by Gemini")
+                return text
+        except Exception as e:
+            print(f"[LLM Provider] Gemini failed ({e})")
+    else:
+        # Default / Gemini provider chain
+        try:
+            text = _call_gemini(prompt)
+            if text and text.strip():
+                print("[LLM Provider] Served by Gemini")
+                return text
+            print("[LLM Provider] Gemini returned empty response, falling through to Groq...")
+        except Exception as e:
+            print(f"[LLM Provider] Gemini failed ({e}), falling through to Groq...")
+        try:
+            text = _call_groq_raw(prompt)
+            if text and text.strip():
+                print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
+                return text
+            print("[LLM Provider] Groq returned empty response.")
+        except Exception as e:
+            print(f"[LLM Provider] Groq failed ({e})")
 
-    try:
-        text = _call_groq_raw(prompt)
-        if text and text.strip():
-            print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
-            return text
-        print("[LLM Provider] Groq returned empty response.")
-    except Exception as e:
-        print(f"[LLM Provider] Groq failed ({e})")
-
-    raise RuntimeError("All configured LLM providers (Gemini, Groq) failed.")
+    raise RuntimeError("All configured LLM providers (Groq, Gemini) failed.")
 
 
 def _normalize_difficulty(val) -> int:
@@ -490,30 +506,59 @@ def generate_quiz_questions(content: str, n: int = 5, language: str = "en") -> l
     request_n = max(n, 10)
     prompt = QUIZ_PROMPT_TEMPLATE.format(n=request_n, language=lang_name, content=content[:6000])
     
-    # 1. Primary provider: Gemini
-    try:
-        raw = _call_gemini(prompt)
-        parsed = _extract_json(raw)
-        if isinstance(parsed, list) and len(parsed) > 0:
-            for q in parsed:
-                q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
-            print("[LLM Provider] Served by Gemini")
-            return parsed[:request_n]
-        print("[LLM Provider] Gemini returned empty/invalid JSON, falling through to Groq...")
-    except Exception as e:
-        print(f"[LLM Provider] Gemini failed ({e}), falling through to Groq...")
+    # Determine order based on LLM_PROVIDER setting
+    provider = settings.LLM_PROVIDER.lower() if settings.LLM_PROVIDER else "groq"
+    
+    if provider == "groq":
+        # 1. Primary: Groq (ultra-fast 1-2s response)
+        try:
+            parsed = _call_groq(prompt)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                for q in parsed:
+                    q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
+                print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
+                return parsed[:request_n]
+            print("[LLM Provider] Groq returned empty/invalid JSON, falling through to Gemini...")
+        except Exception as e:
+            print(f"[LLM Provider] Groq failed ({e}), falling through to Gemini...")
 
-    # 2. Secondary fallback provider: Groq
-    try:
-        parsed = _call_groq(prompt)
-        if isinstance(parsed, list) and len(parsed) > 0:
-            for q in parsed:
-                q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
-            print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
-            return parsed[:request_n]
-        print("[LLM Provider] Groq returned empty/invalid JSON, falling through to offline fallback...")
-    except Exception as e:
-        print(f"[LLM Provider] Groq failed ({e}), falling through to offline fallback...")
+        # 2. Secondary: Gemini
+        try:
+            raw = _call_gemini(prompt)
+            parsed = _extract_json(raw)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                for q in parsed:
+                    q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
+                print("[LLM Provider] Served by Gemini")
+                return parsed[:request_n]
+            print("[LLM Provider] Gemini returned empty/invalid JSON, falling through to offline fallback...")
+        except Exception as e:
+            print(f"[LLM Provider] Gemini failed ({e}), falling through to offline fallback...")
+    else:
+        # 1. Primary: Gemini
+        try:
+            raw = _call_gemini(prompt)
+            parsed = _extract_json(raw)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                for q in parsed:
+                    q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
+                print("[LLM Provider] Served by Gemini")
+                return parsed[:request_n]
+            print("[LLM Provider] Gemini returned empty/invalid JSON, falling through to Groq...")
+        except Exception as e:
+            print(f"[LLM Provider] Gemini failed ({e}), falling through to Groq...")
+
+        # 2. Secondary: Groq
+        try:
+            parsed = _call_groq(prompt)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                for q in parsed:
+                    q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
+                print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
+                return parsed[:request_n]
+            print("[LLM Provider] Groq returned empty/invalid JSON, falling through to offline fallback...")
+        except Exception as e:
+            print(f"[LLM Provider] Groq failed ({e}), falling through to offline fallback...")
 
     # 3. Deterministic offline fallback (never fails)
     print("[LLM Provider] Served by Deterministic Offline Fallback")

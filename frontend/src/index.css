@@ -3,63 +3,169 @@
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --color-bg-base: #070B16;
+    --color-surface-card: #0D1527;
+    --color-surface-elevated: #131E36;
+    --color-surface-well: #050811;
+    --color-border-subtle: rgba(255, 255, 255, 0.08);
+    --color-border-hover: rgba(16, 185, 129, 0.3);
+    --color-accent-emerald: #10B981;
+    --color-accent-amber: #F59E0B;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
   body {
-    background-color: #070D1E;
-    color: #DBE1FF;
-    font-family: 'Inter', sans-serif;
+    background-color: var(--color-bg-base);
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    min-width: 320px;
+    caret-color: var(--color-accent-emerald);
     background-image: 
-      radial-gradient(at 15% 15%, rgba(72, 229, 194, 0.04) 0px, transparent 40%),
-      radial-gradient(at 85% 80%, rgba(28, 37, 65, 0.6) 0px, transparent 50%),
-      radial-gradient(at 50% 50%, rgba(16, 185, 129, 0.02) 0px, transparent 60%);
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgba(16, 185, 129, 0.04), transparent 70%),
+      radial-gradient(ellipse 60% 40% at 90% 90%, rgba(20, 30, 55, 0.5), transparent 70%);
     background-attachment: fixed;
+  }
+
+  /* Browser Surfaces - Impeccable Craft Floor */
+  ::selection {
+    background-color: rgba(16, 185, 129, 0.35);
+    color: #FFFFFF;
+  }
+
+  /* Accessible focus indicators */
+  :focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px #070B16, 0 0 0 4px rgba(16, 185, 129, 0.85);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    text-wrap: balance;
+    color: #F8FAFC;
+    letter-spacing: -0.02em;
   }
 }
 
-/* Glassmorphism primitives */
-.glass-panel {
-  background: linear-gradient(145deg, rgba(28, 37, 65, 0.65) 0%, rgba(11, 19, 43, 0.75) 100%);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(72, 229, 194, 0.12);
-  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+/* Institutional Sovereign Card Surfaces (Replacing generic AI-glassmorphism) */
+.sovereign-card {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.45), 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
-.glass-panel-subtle {
-  background: rgba(19, 27, 51, 0.55);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.06);
+.sovereign-card-interactive {
+  background-color: var(--color-surface-card);
+  border: 1px solid var(--color-border-subtle);
+  border-radius: 14px;
+  box-shadow: 0 4px 16px -2px rgba(0, 0, 0, 0.4);
+  transition: transform 160ms var(--ease-out-expo), 
+              border-color 160ms ease-out, 
+              box-shadow 160ms ease-out,
+              background-color 160ms ease-out;
 }
 
-.glass-card-interactive {
-  background: linear-gradient(145deg, rgba(28, 37, 65, 0.6) 0%, rgba(11, 19, 43, 0.7) 100%);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+.sovereign-card-interactive:hover {
+  border-color: rgba(255, 255, 255, 0.16);
+  background-color: #101930;
+  transform: translateY(-1.5px);
+  box-shadow: 0 8px 24px -4px rgba(0, 0, 0, 0.55), 0 2px 4px rgba(0, 0, 0, 0.35);
 }
 
-.glass-card-interactive:hover {
-  border-color: rgba(72, 229, 194, 0.35);
-  box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.45), 0 0 16px 0 rgba(72, 229, 194, 0.1);
-  transform: translateY(-2px);
+.sovereign-card-interactive:active {
+  transform: scale(0.985);
 }
 
-/* Custom Scrollbars */
+/* Inset plotting well for charts, code & data trees */
+.sovereign-well {
+  background-color: var(--color-surface-well);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  box-shadow: inset 0 2px 6px rgba(0, 0, 0, 0.6);
+}
+
+/* Emil Kowalski Tactile Button System */
+.btn-primary {
+  background-color: #10B981;
+  color: #04100B;
+  font-weight: 600;
+  border-radius: 10px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 2px 8px -1px rgba(16, 185, 129, 0.25);
+  transition: transform 140ms var(--ease-out-expo), 
+              background-color 140ms ease-out, 
+              box-shadow 140ms ease-out;
+}
+
+.btn-primary:hover {
+  background-color: #34D399;
+  box-shadow: 0 2px 10px -1px rgba(16, 185, 129, 0.35);
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+.btn-secondary {
+  background-color: rgba(255, 255, 255, 0.04);
+  color: #F1F5F9;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  font-weight: 500;
+  border-radius: 10px;
+  transition: transform 140ms var(--ease-out-expo), 
+              background-color 140ms ease-out, 
+              border-color 140ms ease-out;
+}
+
+.btn-secondary:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.18);
+  color: #FFFFFF;
+}
+
+.btn-secondary:active {
+  transform: scale(0.98);
+}
+
+/* Tabular Numerals for Data Integrity */
+.num-tabular {
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+}
+
+/* Custom Institutional Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(7, 13, 30, 0.5);
+  background: #070B16;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(72, 229, 194, 0.2);
-  border-radius: 9999px;
+  background: #1E293B;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(72, 229, 194, 0.4);
+  background: #334155;
+}
+
+/* Mobile & Touch Utilities */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.touch-pan-x {
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x;
+}
+
+@supports (padding-bottom: env(safe-area-inset-bottom)) {
+  .safe-area-bottom {
+    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
+  }
 }

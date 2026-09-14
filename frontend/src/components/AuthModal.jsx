@@ -196,15 +196,13 @@ export default function AuthModal() {
       onClick={(e) => e.target === e.currentTarget && closeAuthModal()}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md" />
-
-      {/* Modal Container */}
-      <div className="relative z-10 w-full max-w-md space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-300">
+      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md" />      {/* Modal Container */}
+      <div className="relative z-10 w-full max-w-md my-auto max-h-[92vh] overflow-y-auto space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-200">
         {/* Close Button */}
         <div className="flex justify-end">
           <button
             onClick={closeAuthModal}
-            className="p-1.5 rounded-lg bg-slate-800/80 border border-white/10 text-slate-400 hover:text-white hover:bg-slate-700 transition-all"
+            className="p-1.5 rounded-md bg-[#0e1a30] border border-white/10 text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -213,27 +211,27 @@ export default function AuthModal() {
 
         {/* Brand Header */}
         <div className="text-center space-y-1">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-teal-400 to-emerald-500 shadow-xl shadow-teal-500/20 ring-1 ring-white/30 mb-1">
-            <Layers className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#0e1a30] border border-emerald-500/30 font-mono text-xs font-bold text-emerald-400 mb-1 shadow-sm">
+            MoS
           </div>
-          <h2 className="font-display font-black text-2xl text-white tracking-tight">
-            SkillLens <span className="text-teal-400">AI</span>
+          <h2 className="font-display font-bold text-xl text-white tracking-tight">
+            SkillLens <span className="text-emerald-400 text-xs font-mono px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/10 ml-1">FRAC</span>
           </h2>
-          <p className="text-xs text-slate-400 font-medium">
-            Sign in to access full functionality
+          <p className="text-xs text-slate-400 font-normal">
+            National Statistical Cadre Authentication
           </p>
         </div>
 
         {/* Card */}
-        <div className="p-6 rounded-2xl glass-panel space-y-4 border border-white/10 shadow-2xl">
+        <div className="p-5 sm:p-6 rounded-lg sovereign-card space-y-4 border border-white/10 shadow-2xl">
           {/* Mode Switcher */}
-          <div className="flex rounded-xl bg-slate-900/60 p-1 border border-white/[0.06] w-full">
+          <div className="flex rounded-md bg-[#070d18] p-1 border border-white/10 w-full">
             <button
               type="button"
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${
                 mode === "login"
-                  ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/[0.08] text-white border border-white/10 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
               }`}
               onClick={() => {
                 setMode("login");
@@ -245,10 +243,10 @@ export default function AuthModal() {
             </button>
             <button
               type="button"
-              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${
+              className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${
                 mode === "register"
-                  ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
-                  : "text-slate-400 hover:text-white"
+                  ? "bg-white/[0.08] text-white border border-white/10 shadow-sm"
+                  : "text-slate-400 hover:text-slate-200"
               }`}
               onClick={() => {
                 setMode("register");
@@ -256,7 +254,7 @@ export default function AuthModal() {
                 setSuccessMsg("");
               }}
             >
-              Register
+              Officer Registration
             </button>
           </div>
 
@@ -265,7 +263,7 @@ export default function AuthModal() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-slate-900/80 hover:bg-slate-800 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2.5 transition-all hover:scale-[1.01] active:scale-[0.98] shadow-sm disabled:opacity-50"
+            className="w-full py-2.5 px-4 rounded-md border border-white/10 bg-[#070d18] hover:bg-[#0b1424] text-slate-200 text-xs font-medium flex items-center justify-center gap-2.5 transition-colors active:scale-[0.98] shadow-sm disabled:opacity-50 min-h-[40px]"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#EA4335" d="M12 5c1.54 0 2.93.56 4.02 1.48l3.01-3.01C17.21 1.77 14.77 1 12 1 7.42 1 3.55 3.6 1.72 7.37l3.66 2.84C6.26 7.35 8.9 5 12 5z" />
@@ -273,25 +271,25 @@ export default function AuthModal() {
               <path fill="#FBBC05" d="M5.38 14.79c-.23-.68-.36-1.41-.36-2.16s.13-1.48.36-2.16L1.72 7.63C.62 9.8 0 12 0 14.37s.62 4.57 1.72 6.74l3.66-2.84z" />
               <path fill="#34A853" d="M12 23c3.24 0 5.95-1.08 7.93-2.91l-3.66-2.84c-1.07.72-2.45 1.16-4.27 1.16-3.1 0-5.74-2.35-6.62-5.21L1.72 16.03C3.55 19.8 7.42 23 12 23z" />
             </svg>
-            <span>Continue with Google</span>
+            <span>Continue with Government Google Account</span>
           </button>
 
           {/* Divider */}
           <div className="relative flex items-center justify-center">
             <div className="border-t border-white/10 w-full" />
-            <span className="bg-[#0b1329] px-3 text-[10px] uppercase font-bold tracking-widest text-slate-500">
-              Or with email
+            <span className="bg-[#0c1322] px-3 text-[10px] uppercase font-mono tracking-widest text-slate-400">
+              Or official credentials
             </span>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-3">
             {mode === "register" && (
               <div className="relative">
-                <User className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <User className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   required
-                  placeholder="Full name"
-                  className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                  placeholder="Officer Full Name"
+                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
@@ -299,12 +297,12 @@ export default function AuthModal() {
             )}
 
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
               <input
                 required
                 type="email"
-                placeholder="Official Email Address"
-                className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                placeholder="Official Email Address (@nic.in / @gov.in / email)"
+                className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
@@ -312,12 +310,12 @@ export default function AuthModal() {
 
             <div className="space-y-1">
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   required
                   type="password"
                   placeholder="Password"
-                  className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
@@ -330,7 +328,7 @@ export default function AuthModal() {
                       setResetEmail(form.email);
                       setShowForgotModal(true);
                     }}
-                    className="text-[11px] text-teal-400/80 hover:text-teal-300 font-medium transition-colors"
+                    className="text-[11px] text-emerald-400/80 hover:text-emerald-300 transition-colors pt-0.5"
                   >
                     Forgot password?
                   </button>
@@ -341,16 +339,16 @@ export default function AuthModal() {
             {mode === "register" && (
               <div className="space-y-3 pt-1">
                 <div className="relative">
-                  <Briefcase className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                  <Briefcase className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
                   <select
                     required
-                    className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                    className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                     value={form.position_id}
                     onChange={(e) => setForm({ ...form, position_id: e.target.value })}
                   >
-                    <option value="">Select your Statistical Position</option>
+                    <option value="">Select Official Statistical Cadre Position</option>
                     {positions.map((p) => (
-                      <option key={p.id} value={p.id} className="bg-slate-900 text-white">
+                      <option key={p.id} value={p.id} className="bg-[#070d18] text-white">
                         {p.title} ({p.department})
                       </option>
                     ))}
@@ -359,32 +357,32 @@ export default function AuthModal() {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block px-0.5">
+                    <label className="text-[10px] uppercase font-mono text-slate-400 block px-0.5">
                       Qualification
                     </label>
                     <div className="relative">
-                      <GraduationCap className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                      <GraduationCap className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5" />
                       <input
                         placeholder="e.g. M.Sc Statistics"
-                        className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                        className="w-full bg-[#070d18] border border-white/10 rounded-md pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                         value={form.qualification}
                         onChange={(e) => setForm({ ...form, qualification: e.target.value })}
                       />
                     </div>
                   </div>
                   <div className="space-y-1">
-                    <label className="text-[10px] uppercase font-semibold tracking-wider text-slate-400 block px-0.5">
+                    <label className="text-[10px] uppercase font-mono text-slate-400 block px-0.5">
                       Experience (Years)
                     </label>
                     <div className="relative">
-                      <Clock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                      <Clock className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5" />
                       <input
                         type="number"
                         min="0"
                         max="50"
                         step="0.5"
                         placeholder="e.g. 2"
-                        className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                        className="w-full bg-[#070d18] border border-white/10 rounded-md pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px] num-tabular"
                         value={form.experience_years}
                         onChange={(e) => setForm({ ...form, experience_years: e.target.value })}
                       />
@@ -392,18 +390,18 @@ export default function AuthModal() {
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-xl bg-teal-500/10 border border-teal-500/20 text-[11px] text-teal-300 flex items-start gap-2">
-                  <Mail className="w-3.5 h-3.5 text-teal-400 mt-0.5 shrink-0" />
+                <div className="p-2.5 rounded-md bg-emerald-500/5 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-start gap-2">
+                  <Mail className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
                   <span>
-                    A verification link will be sent to your email. You must click it in your{" "}
-                    <strong>Gmail Inbox or SPAM folder</strong> to activate your account.
+                    A verification link will be dispatched to your email. You must verify via your{" "}
+                    <strong>Inbox or SPAM folder</strong> to activate cadre credentials.
                   </span>
                 </div>
               </div>
             )}
 
             {error && (
-              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-2">
+              <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-2">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>
@@ -418,7 +416,7 @@ export default function AuthModal() {
                         type="button"
                         disabled={loading}
                         onClick={() => handleSubmit()}
-                        className="px-3 py-1.5 rounded-lg bg-teal-400 text-slate-950 text-xs font-bold hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-md shadow-teal-500/20"
+                        className="btn-primary text-xs py-1.5 px-3"
                       >
                         {loading ? "Verifying..." : "I've Verified — Sign In"}
                       </button>
@@ -426,7 +424,7 @@ export default function AuthModal() {
                         type="button"
                         disabled={resendLoading}
                         onClick={handleResendVerification}
-                        className="text-xs font-medium text-slate-400 hover:text-teal-300 underline disabled:opacity-50 ml-auto"
+                        className="text-xs font-medium text-slate-400 hover:text-emerald-300 underline disabled:opacity-50 ml-auto"
                       >
                         {resendLoading ? "Resending..." : "Resend Link"}
                       </button>
@@ -437,7 +435,7 @@ export default function AuthModal() {
             )}
 
             {successMsg && (
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2">
+              <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{successMsg}</span>
               </div>
@@ -446,16 +444,16 @@ export default function AuthModal() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-teal-400 to-emerald-400 text-slate-950 font-bold text-xs shadow-xl shadow-teal-500/20 hover:brightness-110 active:scale-[0.98] transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+              className="btn-primary w-full justify-center py-2.5 text-xs gap-2 min-h-[42px]"
             >
               {loading ? (
                 <>
                   <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
-                  <span>Authenticating…</span>
+                  <span>Authenticating Cadre Credentials…</span>
                 </>
               ) : (
                 <>
-                  <span>{mode === "login" ? "Sign In" : "Create Account"}</span>
+                  <span>{mode === "login" ? "Verify & Sign In" : "Register Officer Profile"}</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}
@@ -463,50 +461,50 @@ export default function AuthModal() {
           </form>
         </div>
 
-        <p className="text-[11px] text-slate-500 text-center">
-          Ministry of Statistics and Programme Implementation · FRAC methodology.
+        <p className="text-[10px] font-mono text-slate-400 text-center">
+          Ministry of Statistics and Programme Implementation • FRAC Methodology
         </p>
       </div>
 
       {/* Forgot Password Sub-Modal */}
       {showForgotModal && (
         <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-2xl glass-panel p-6 space-y-4 border border-white/10 shadow-2xl relative z-30">
+          <div className="w-full max-w-sm rounded-lg sovereign-card p-6 space-y-4 border border-white/10 shadow-2xl relative z-30">
             <div className="flex items-center gap-2 text-white">
-              <KeyRound className="w-5 h-5 text-teal-400" />
-              <h3 className="font-bold text-sm">Reset Password</h3>
+              <KeyRound className="w-4 h-4 text-emerald-400" />
+              <h3 className="font-semibold text-sm">Reset Password</h3>
             </div>
             <p className="text-xs text-slate-400">
               Enter your official email to receive a secure password reset link.
             </p>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
+            <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
               ⚠️ <strong>Check SPAM folder:</strong> Reset emails often land in Gmail{" "}
               <strong>Spam</strong> or <strong>Promotions</strong>.
             </div>
             <form onSubmit={handleResetPassword} className="space-y-3">
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
                 <input
                   required
                   type="email"
                   placeholder="Official Email Address"
-                  className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400"
+                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 min-h-[40px]"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                 />
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-2 pt-1">
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="flex-1 py-2 rounded-xl border border-white/10 text-xs font-semibold text-slate-400 hover:text-white"
+                  className="btn-secondary flex-1 justify-center py-2 text-xs"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="flex-1 py-2 rounded-xl bg-teal-400 text-slate-950 text-xs font-bold hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-1.5"
+                  className="btn-primary flex-1 justify-center py-2 text-xs"
                 >
                   {resetLoading ? "Sending…" : "Send Link"}
                 </button>

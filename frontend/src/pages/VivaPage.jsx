@@ -221,35 +221,35 @@ export default function VivaPage() {
   const totalQuestions = session?.questions?.length || 3;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8 animate-fade-in pb-16">
+    <div className="max-w-4xl mx-auto space-y-7 pb-16">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-border/40 pb-5">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-white/[0.08] pb-5">
         <div>
           <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+            <span className="px-2 py-0.5 rounded text-[10px] font-mono font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 flex items-center gap-1.5 uppercase tracking-wider">
               <Sparkles className="w-3 h-3" /> Voice Viva AI Examiner
             </span>
-            <span className="text-xs text-muted-foreground font-mono">Mission Karmayogi FRAC</span>
+            <span className="text-xs text-slate-400 font-mono">Mission Karmayogi FRAC</span>
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-display font-bold tracking-tight text-white">
             Oral Viva Examination
           </h1>
-          <p className="text-sm text-muted-foreground">
-            Verbal competency assessment with speech recognition and objective rubric evaluation.
+          <p className="text-xs text-slate-400 mt-1 max-w-2xl leading-relaxed">
+            Verbal competency verification with speech recognition, administrative situational judgment, and objective rubric scoring.
           </p>
         </div>
 
         {session && !finalReport && (
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0 font-mono">
             <div className="text-right">
-              <div className="text-xs text-muted-foreground uppercase font-semibold">Progress</div>
-              <div className="text-sm font-bold text-emerald-400">
-                Question {currentIndex + 1} of {totalQuestions}
+              <div className="text-[10px] text-slate-400 uppercase">Assessment Progress</div>
+              <div className="text-xs font-bold text-white num-tabular">
+                Item {currentIndex + 1} / {totalQuestions}
               </div>
             </div>
-            <div className="w-24 h-2 bg-secondary rounded-full overflow-hidden">
+            <div className="w-24 h-1.5 bg-[#070d18] rounded-full overflow-hidden border border-white/10">
               <div
-                className="h-full bg-emerald-500 transition-all duration-300"
+                className="h-full bg-emerald-400 transition-all duration-300"
                 style={{ width: `${((currentIndex + 1) / totalQuestions) * 100}%` }}
               />
             </div>
@@ -258,66 +258,66 @@ export default function VivaPage() {
       </div>
 
       {error && (
-        <div className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-          <div className="text-sm">{error}</div>
+        <div className="p-3.5 rounded-md bg-rose-500/10 border border-rose-500/25 text-rose-300 flex items-start gap-2.5 text-xs font-mono">
+          <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-400" />
+          <div>{error}</div>
         </div>
       )}
 
       {/* STEP 1: Select Competency & Start */}
       {!session && (
-        <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-6">
-          <div>
-            <h2 className="text-lg font-semibold text-foreground mb-1">Select Competency for Viva</h2>
-            <p className="text-sm text-muted-foreground">
-              The AI examiner will evaluate your conceptual clarity, situational judgment, and administrative execution.
+        <div className="sovereign-card p-6 sm:p-7 space-y-6">
+          <div className="border-b border-white/[0.08] pb-4">
+            <h2 className="text-base font-display font-bold text-white mb-1">Select Competency for Oral Examination</h2>
+            <p className="text-xs text-slate-400">
+              The AI examiner will evaluate your conceptual clarity, regulatory awareness, and executive situational judgment.
             </p>
           </div>
 
-          <div className="space-y-3">
-            <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              Target Competency
+          <div className="space-y-2">
+            <label className="text-xs font-medium text-slate-300 uppercase tracking-wider font-mono">
+              TARGET COMPETENCY TO EXAMINE
             </label>
             <select
               value={competencyId}
               onChange={(e) => setCompetencyId(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-secondary/50 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/30"
+              className="w-full px-3.5 py-2.5 rounded-lg bg-[#070d18] border border-white/15 text-white text-xs focus:outline-none focus:border-emerald-400 font-sans"
             >
-              <option value="">-- Choose a Competency --</option>
+              <option value="">-- Choose an Official Competency --</option>
               {competencies.map((c) => (
                 <option key={c.competency_id} value={c.competency_id}>
-                  {c.competency_name} (Level: {c.current_level?.toFixed(1)} / Req: {c.required_level?.toFixed(1)})
+                  {c.competency_name} (Current Level: {c.current_level?.toFixed(1)} / Benchmark: {c.required_level?.toFixed(1)})
                 </option>
               ))}
             </select>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 pt-2">
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/40">
-              <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2">
-                <Mic className="w-4 h-4" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 pt-1">
+            <div className="p-3.5 rounded-md sovereign-well">
+              <div className="w-7 h-7 rounded bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2">
+                <Mic className="w-3.5 h-3.5" />
               </div>
-              <div className="text-sm font-semibold mb-1">Speech & Text Input</div>
-              <div className="text-xs text-muted-foreground">
-                Speak naturally in Hindi or English using your microphone, or type your answer.
-              </div>
-            </div>
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/40">
-              <div className="w-8 h-8 rounded-lg bg-teal-500/10 text-teal-400 flex items-center justify-center mb-2">
-                <Award className="w-4 h-4" />
-              </div>
-              <div className="text-sm font-semibold mb-1">Strict Rubric Scoring</div>
-              <div className="text-xs text-muted-foreground">
-                Questions are scored out of 10 points based on specific criteria points covered.
+              <div className="text-xs font-semibold text-white mb-1">Verbal Response Capture</div>
+              <div className="text-[11px] text-slate-400 leading-snug">
+                Speak directly using your microphone in Hindi or English, or type in the fallback field.
               </div>
             </div>
-            <div className="p-4 rounded-xl bg-secondary/30 border border-border/40">
-              <div className="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center mb-2">
-                <Sparkles className="w-4 h-4" />
+            <div className="p-3.5 rounded-md sovereign-well">
+              <div className="w-7 h-7 rounded bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2">
+                <Award className="w-3.5 h-3.5" />
               </div>
-              <div className="text-sm font-semibold mb-1">BKT & Profile Update</div>
-              <div className="text-xs text-muted-foreground">
-                Viva results directly update your official Karmayogi competency score and BKT mastery.
+              <div className="text-xs font-semibold text-white mb-1">Objective Rubric Audit</div>
+              <div className="text-[11px] text-slate-400 leading-snug">
+                Responses are graded out of 10 points based on covered statutory principles and execution criteria.
+              </div>
+            </div>
+            <div className="p-3.5 rounded-md sovereign-well">
+              <div className="w-7 h-7 rounded bg-emerald-500/10 text-emerald-400 flex items-center justify-center mb-2">
+                <Sparkles className="w-3.5 h-3.5" />
+              </div>
+              <div className="text-xs font-semibold text-white mb-1">Passbook Calibration</div>
+              <div className="text-[11px] text-slate-400 leading-snug">
+                Viva results calibrate directly into your official FRAC passbook and BKT mastery telemetry.
               </div>
             </div>
           </div>
@@ -325,17 +325,17 @@ export default function VivaPage() {
           <button
             onClick={handleStartViva}
             disabled={loading || !competencyId}
-            className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium shadow-lg shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+            className="btn-primary w-full justify-center py-2.5 text-xs gap-2"
           >
             {loading ? (
               <>
-                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                Examiner Preparing Questions...
+                <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                <span>Examiner Preparing Oral Rubric…</span>
               </>
             ) : (
               <>
-                <Radio className="w-4 h-4 animate-pulse" />
-                Start Oral Viva Examination
+                <Radio className="w-3.5 h-3.5" />
+                <span>Start Oral Viva Examination</span>
               </>
             )}
           </button>
@@ -344,25 +344,27 @@ export default function VivaPage() {
 
       {/* STEP 2: Active Viva Question Screen */}
       {session && !finalReport && currentQ && (
-        <div className="space-y-6">
+        <div className="space-y-5">
           {/* Question Card */}
-          <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-4">
-            <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span className="font-semibold uppercase tracking-wider">
-                Oral Question {currentIndex + 1} of {totalQuestions}
+          <div className="sovereign-card p-5 sm:p-6 space-y-3.5">
+            <div className="flex items-center justify-between text-xs font-mono">
+              <span className="text-slate-400 uppercase tracking-wider">
+                Oral Item #{currentIndex + 1} / {totalQuestions}
               </span>
-              <span className="px-2 py-0.5 rounded bg-secondary font-mono">Max Score: 10 pts</span>
+              <span className="px-2 py-0.5 rounded bg-white/[0.06] text-slate-300 border border-white/10">
+                Max Score: 10 pts
+              </span>
             </div>
 
             {/* English Question */}
-            <div className="text-lg font-medium text-foreground leading-relaxed">
+            <div className="text-base font-semibold text-white leading-relaxed">
               {currentQ.question_en}
             </div>
 
             {/* Hindi Translation Card */}
             {currentQ.question_hi && (
-              <div className="p-3.5 rounded-xl bg-secondary/30 border border-border/40 text-sm text-foreground/80 leading-relaxed font-sans">
-                <span className="text-xs font-semibold text-emerald-400 block mb-1">हिंदी अनुवाद:</span>
+              <div className="p-3 rounded-md sovereign-well text-xs text-slate-300 leading-relaxed font-sans">
+                <span className="text-[11px] font-mono font-semibold text-emerald-400 block mb-1">हिंदी अनुवाद:</span>
                 {currentQ.question_hi}
               </div>
             )}
@@ -370,59 +372,56 @@ export default function VivaPage() {
 
           {/* Answer Mode Tabs */}
           {!currentEvaluation && (
-            <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-6">
-              <div className="flex items-center justify-between border-b border-border/40 pb-3">
-                <div className="text-sm font-semibold text-foreground">Your Oral Response</div>
-                <div className="flex gap-2">
+            <div className="sovereign-card p-5 sm:p-6 space-y-5">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-3">
+                <div className="text-xs font-semibold text-white uppercase font-mono">Candidate Verbal Response</div>
+                <div className="flex gap-2 font-mono">
                   <button
                     onClick={() => setInputMode("voice")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
                       inputMode === "voice"
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                        : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
                     <Mic className="w-3.5 h-3.5" /> Speech / Mic
                   </button>
                   <button
                     onClick={() => setInputMode("text")}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all flex items-center gap-1.5 ${
+                    className={`px-2.5 py-1 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${
                       inputMode === "text"
-                        ? "bg-emerald-500/15 text-emerald-400 border border-emerald-500/30"
-                        : "text-muted-foreground hover:text-foreground"
+                        ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                        : "text-slate-400 hover:text-slate-200"
                     }`}
                   >
-                    <FileText className="w-3.5 h-3.5" /> Typed Fallback
+                    <FileText className="w-3.5 h-3.5" /> Typed Input
                   </button>
                 </div>
               </div>
 
               {/* VOICE RECORDING MODE */}
               {inputMode === "voice" && (
-                <div className="flex flex-col items-center justify-center py-8 space-y-6">
-                  {/* Pulsing Mic Button */}
+                <div className="flex flex-col items-center justify-center py-6 space-y-4">
+                  {/* Mic Button */}
                   <div className="relative">
-                    {isRecording && (
-                      <div className="absolute -inset-3 rounded-full bg-emerald-500/20 animate-ping" />
-                    )}
                     <button
                       onClick={isRecording ? stopRecording : startRecording}
                       disabled={evaluating}
-                      className={`relative w-24 h-24 rounded-full flex flex-col items-center justify-center transition-all shadow-xl ${
+                      className={`w-20 h-20 rounded-full flex flex-col items-center justify-center transition-all shadow-md active:scale-[0.98] ${
                         isRecording
-                          ? "bg-rose-600 text-white shadow-rose-500/30"
-                          : "bg-emerald-600 hover:bg-emerald-500 text-white shadow-emerald-500/30"
+                          ? "bg-rose-600 text-white"
+                          : "bg-emerald-600 hover:bg-emerald-500 text-slate-950"
                       }`}
                     >
                       {isRecording ? (
                         <>
-                          <MicOff className="w-8 h-8 mb-1" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Stop</span>
+                          <MicOff className="w-7 h-7 mb-0.5" />
+                          <span className="text-[10px] font-mono font-bold uppercase">Stop</span>
                         </>
                       ) : (
                         <>
-                          <Mic className="w-8 h-8 mb-1" />
-                          <span className="text-[10px] font-bold uppercase tracking-wider">Record</span>
+                          <Mic className="w-7 h-7 mb-0.5 text-slate-950" />
+                          <span className="text-[10px] font-mono font-bold uppercase text-slate-950">Record</span>
                         </>
                       )}
                     </button>
@@ -431,16 +430,16 @@ export default function VivaPage() {
                   {/* Status indicator */}
                   <div className="text-center space-y-1">
                     {isRecording ? (
-                      <div className="flex items-center gap-2 text-rose-400 font-mono text-sm font-semibold">
-                        <span className="w-2.5 h-2.5 rounded-full bg-rose-500 animate-pulse" />
-                        Recording ({recordingSeconds}s) — Speak your answer clearly...
+                      <div className="flex items-center gap-2 text-rose-300 font-mono text-xs font-semibold">
+                        <span className="w-2 h-2 rounded-full bg-rose-400" />
+                        <span>Recording: {recordingSeconds}s — Speak response clearly…</span>
                       </div>
                     ) : audioBlob ? (
-                      <div className="text-sm text-emerald-400 flex items-center gap-1.5 font-medium">
+                      <div className="text-xs text-emerald-400 flex items-center gap-1.5 font-mono font-medium">
                         <CheckCircle2 className="w-4 h-4" /> Audio response captured. Ready for evaluation.
                       </div>
                     ) : (
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-[11px] text-slate-400">
                         Click the microphone button to start recording your response in Hindi or English.
                       </div>
                     )}
@@ -450,16 +449,16 @@ export default function VivaPage() {
 
               {/* TYPED TEXT FALLBACK MODE */}
               {inputMode === "text" && (
-                <div className="space-y-3">
-                  <div className="text-xs text-muted-foreground">
-                    Type your detailed oral response below. You may write in English, Hindi, or Hinglish:
+                <div className="space-y-2">
+                  <div className="text-[11px] text-slate-400">
+                    Type your detailed verbal response below (English, Hindi, or Hinglish accepted):
                   </div>
                   <textarea
-                    rows={5}
+                    rows={4}
                     value={textAnswer}
                     onChange={(e) => setTextAnswer(e.target.value)}
-                    placeholder="Enter your response addressing the key administrative aspects..."
-                    className="w-full p-4 rounded-xl bg-secondary/40 border border-border text-foreground focus:outline-none focus:ring-2 focus:ring-emerald-500/30 text-sm"
+                    placeholder="Enter your administrative analysis addressing the key regulatory aspects..."
+                    className="w-full p-3.5 rounded-md bg-[#070d18] border border-white/15 text-white placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 text-xs leading-relaxed"
                   />
                 </div>
               )}
@@ -468,16 +467,17 @@ export default function VivaPage() {
               <button
                 onClick={handleSubmitAnswer}
                 disabled={evaluating || (inputMode === "voice" && !audioBlob && !isRecording) || (inputMode === "text" && !textAnswer.trim())}
-                className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-medium shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                className="btn-primary w-full justify-center py-2.5 text-xs gap-2"
               >
                 {evaluating ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                    Examiner Evaluating Response...
+                    <div className="w-3.5 h-3.5 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+                    <span>Examiner Evaluating Response…</span>
                   </>
                 ) : (
                   <>
-                    <Send className="w-4 h-4" /> Submit to Examiner
+                    <Send className="w-3.5 h-3.5" />
+                    <span>Submit to AI Examiner</span>
                   </>
                 )}
               </button>
@@ -486,46 +486,46 @@ export default function VivaPage() {
 
           {/* STEP 2.5: Evaluation Result for Current Question */}
           {currentEvaluation && (
-            <div className="bg-card border border-border/50 rounded-2xl p-6 shadow-sm space-y-6 animate-fade-in">
+            <div className="sovereign-card p-5 sm:p-6 space-y-5 animate-fade-in">
               {/* Score Header */}
-              <div className="flex items-center justify-between border-b border-border/40 pb-4">
+              <div className="flex items-center justify-between border-b border-white/10 pb-4">
                 <div>
-                  <div className="text-xs font-semibold uppercase text-muted-foreground">Examiner Evaluation</div>
-                  <div className="text-lg font-bold text-foreground">Question {currentIndex + 1} Assessment</div>
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-slate-400">Examiner Evaluation Audit</div>
+                  <div className="text-sm font-semibold text-white">Question {currentIndex + 1} Assessment Rubric</div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-3xl font-black text-emerald-400">
+                <div className="flex items-baseline gap-1.5 font-mono">
+                  <span className="text-3xl font-bold text-emerald-400 num-tabular">
                     {currentEvaluation.score?.toFixed(1)}
                   </span>
-                  <span className="text-sm text-muted-foreground font-semibold">/ 10</span>
+                  <span className="text-xs text-slate-400 font-medium">/ 10.0</span>
                 </div>
               </div>
 
               {/* Verbatim Transcript */}
               <div className="space-y-1.5">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Volume2 className="w-3.5 h-3.5 text-emerald-400" /> Candidate Transcript
+                <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider flex items-center gap-1.5">
+                  <Volume2 className="w-3 h-3 text-emerald-400" /> Recorded Verbal Transcript
                 </div>
-                <div className="p-3.5 rounded-xl bg-secondary/30 border border-border/40 text-sm text-foreground italic">
+                <div className="p-3.5 rounded-md bg-[#070d18] border border-white/10 text-xs text-slate-300 italic leading-relaxed">
                   "{currentEvaluation.transcript}"
                 </div>
               </div>
 
               {/* Rubric Points Breakdown */}
-              <div className="space-y-3">
-                <div className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Rubric Criteria Breakdown
+              <div className="space-y-2.5">
+                <div className="text-[10px] font-mono text-slate-400 uppercase tracking-wider">
+                  Rubric Assessment Criterion Breakdown
                 </div>
                 <div className="space-y-2">
                   {currentEvaluation.points_covered?.map((pt, idx) => (
                     <div
                       key={`cov-${idx}`}
-                      className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2.5"
+                      className="p-3 rounded-md bg-emerald-500/5 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2.5"
                     >
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-semibold block text-emerald-400 mb-0.5">Covered:</span>
-                        {pt}
+                        <span className="font-semibold text-emerald-400 mr-1.5">Covered:</span>
+                        <span className="text-slate-200">{pt}</span>
                       </div>
                     </div>
                   ))}
@@ -533,12 +533,12 @@ export default function VivaPage() {
                   {currentEvaluation.points_missed?.map((pt, idx) => (
                     <div
                       key={`mis-${idx}`}
-                      className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2.5"
+                      className="p-3 rounded-md bg-amber-500/5 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2.5"
                     >
-                      <XCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
+                      <XCircle className="w-3.5 h-3.5 text-amber-400 shrink-0 mt-0.5" />
                       <div>
-                        <span className="font-semibold block text-amber-400 mb-0.5">Missed / Partial:</span>
-                        {pt}
+                        <span className="font-semibold text-amber-400 mr-1.5">Deficit / Missing:</span>
+                        <span className="text-slate-200">{pt}</span>
                       </div>
                     </div>
                   ))}
@@ -546,16 +546,16 @@ export default function VivaPage() {
               </div>
 
               {/* Bilingual Feedback */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-secondary/30 border border-border/40 space-y-1">
-                  <div className="text-xs font-semibold text-emerald-400">Examiner Feedback (English)</div>
-                  <div className="text-xs text-foreground/90 leading-relaxed">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                <div className="p-3.5 rounded-md bg-[#070d18] border border-white/10 space-y-1">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-emerald-400">Examiner Feedback (English)</div>
+                  <div className="text-xs text-slate-300 leading-relaxed">
                     {currentEvaluation.feedback_en}
                   </div>
                 </div>
-                <div className="p-4 rounded-xl bg-secondary/30 border border-border/40 space-y-1">
-                  <div className="text-xs font-semibold text-teal-400">मूल्यांकन समीक्षा (हिंदी)</div>
-                  <div className="text-xs text-foreground/90 leading-relaxed">
+                <div className="p-3.5 rounded-md bg-[#070d18] border border-white/10 space-y-1">
+                  <div className="text-[10px] font-mono uppercase tracking-wider text-teal-400">मूल्यांकन समीक्षा (हिंदी)</div>
+                  <div className="text-xs text-slate-300 leading-relaxed font-sans">
                     {currentEvaluation.feedback_hi}
                   </div>
                 </div>
@@ -564,15 +564,17 @@ export default function VivaPage() {
               {/* Navigation to next question or completion */}
               <button
                 onClick={handleNextQuestion}
-                className="w-full py-3.5 px-6 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-medium shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+                className="btn-primary w-full justify-center py-2.5 text-xs gap-2"
               >
                 {currentIndex < totalQuestions - 1 ? (
                   <>
-                    Proceed to Question {currentIndex + 2} <ChevronRight className="w-4 h-4" />
+                    <span>Proceed to Assessment Question {currentIndex + 2}</span>
+                    <ChevronRight className="w-3.5 h-3.5" />
                   </>
                 ) : (
                   <>
-                    Finalize Oral Viva Examination <Award className="w-4 h-4" />
+                    <Award className="w-3.5 h-3.5" />
+                    <span>Certify & Finalize Oral Viva Examination</span>
                   </>
                 )}
               </button>
@@ -583,48 +585,48 @@ export default function VivaPage() {
 
       {/* STEP 3: Final Certified Examination Report */}
       {finalReport && (
-        <div className="bg-card border border-border/50 rounded-2xl p-8 shadow-sm space-y-8 animate-fade-in">
+        <div className="sovereign-card p-6 sm:p-8 space-y-6 animate-fade-in">
           <div className="text-center space-y-2">
-            <div className="inline-flex p-3 rounded-full bg-emerald-500/10 text-emerald-400 mb-2 border border-emerald-500/20">
-              <Award className="w-8 h-8" />
+            <div className="inline-flex p-3 rounded-full bg-emerald-500/10 text-emerald-400 mb-1 border border-emerald-500/25">
+              <Award className="w-7 h-7" />
             </div>
-            <h2 className="text-2xl font-bold text-foreground">Oral Viva Examination Complete</h2>
-            <p className="text-sm text-muted-foreground max-w-lg mx-auto">
-              Official oral assessment report for{" "}
-              <span className="text-foreground font-semibold">{finalReport.competency_name}</span>.
+            <h2 className="text-xl font-bold text-white tracking-tight">Oral Viva Examination Complete</h2>
+            <p className="text-xs text-slate-400 max-w-lg mx-auto">
+              Official oral assessment dossier for{" "}
+              <span className="text-white font-medium">{finalReport.competency_name}</span>.
               Score evidence has been calibrated into your continuous competency profile.
             </p>
           </div>
 
           {/* Score highlight */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-6 rounded-2xl bg-secondary/30 border border-border/40 flex flex-col items-center justify-center text-center">
-              <span className="text-xs text-muted-foreground uppercase font-semibold tracking-wider mb-1">
+            <div className="p-5 rounded-lg bg-[#070d18] border border-white/10 flex flex-col items-center justify-center text-center">
+              <span className="text-[10px] font-mono uppercase text-slate-400 tracking-wider mb-1">
                 Average Oral Viva Score
               </span>
-              <div className="text-5xl font-black text-emerald-400 mb-1">
+              <div className="text-4xl font-bold font-mono text-emerald-400 mb-1 num-tabular">
                 {finalReport.average_score?.toFixed(1)}
-                <span className="text-xl text-muted-foreground font-normal"> / 10</span>
+                <span className="text-sm text-slate-400 font-normal"> / 10.0</span>
               </div>
-              <span className="text-xs px-3 py-1 rounded-full font-medium bg-emerald-500/10 text-emerald-300 border border-emerald-500/20">
-                Score: {finalReport.score_percent}%
+              <span className="text-[11px] font-mono px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 num-tabular">
+                Proficiency: {finalReport.score_percent}%
               </span>
             </div>
 
-            <div className="p-6 rounded-2xl bg-secondary/30 border border-border/40 flex flex-col justify-center space-y-3">
+            <div className="p-5 rounded-lg bg-[#070d18] border border-white/10 flex flex-col justify-center space-y-3">
               <div>
-                <span className="text-xs text-emerald-400 font-semibold block uppercase tracking-wider mb-1">
+                <span className="text-[10px] font-mono uppercase text-emerald-400 tracking-wider block mb-1">
                   Overall Synthesis (EN)
                 </span>
-                <p className="text-xs text-foreground/90 leading-relaxed">
+                <p className="text-xs text-slate-300 leading-relaxed">
                   {finalReport.overall_feedback_en}
                 </p>
               </div>
-              <div className="border-t border-border/30 pt-2">
-                <span className="text-xs text-teal-400 font-semibold block uppercase tracking-wider mb-1">
+              <div className="border-t border-white/10 pt-2">
+                <span className="text-[10px] font-mono uppercase text-teal-400 tracking-wider block mb-1">
                   समग्र समीक्षा (HI)
                 </span>
-                <p className="text-xs text-foreground/80 leading-relaxed font-sans">
+                <p className="text-xs text-slate-300 leading-relaxed font-sans">
                   {finalReport.overall_feedback_hi}
                 </p>
               </div>
@@ -632,28 +634,28 @@ export default function VivaPage() {
           </div>
 
           {/* Question Breakdown List */}
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
+          <div className="space-y-3">
+            <h3 className="text-xs font-mono uppercase tracking-wider text-slate-400">
               Question-by-Question Rubric Audit
             </h3>
-            <div className="space-y-4">
+            <div className="space-y-3">
               {finalReport.breakdown?.map((item, idx) => (
                 <div
                   key={`item-${idx}`}
-                  className="p-5 rounded-xl bg-secondary/20 border border-border/40 space-y-3"
+                  className="p-4 rounded-lg bg-[#070d18] border border-white/10 space-y-2.5"
                 >
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-foreground">Question {idx + 1}</span>
-                    <span className="px-2.5 py-0.5 rounded-full font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20">
-                      Score: {item.score?.toFixed(1)} / 10
+                    <span className="font-semibold text-white">Question {idx + 1}</span>
+                    <span className="px-2 py-0.5 rounded font-mono text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 text-[11px] num-tabular">
+                      Score: {item.score?.toFixed(1)} / 10.0
                     </span>
                   </div>
 
-                  <div className="text-sm font-medium text-foreground/90">
+                  <div className="text-xs font-medium text-slate-200">
                     {item.question_en}
                   </div>
 
-                  <div className="text-xs text-muted-foreground italic bg-secondary/40 p-3 rounded-lg border border-border/20">
+                  <div className="text-[11px] text-slate-400 italic bg-[#0b1220] p-3 rounded border border-white/10">
                     "{item.transcript}"
                   </div>
 
@@ -661,7 +663,7 @@ export default function VivaPage() {
                     {item.points_covered?.map((pt, pIdx) => (
                       <span
                         key={`c-${pIdx}`}
-                        className="px-2.5 py-1 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20"
+                        className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/20 text-[11px]"
                       >
                         ✓ {pt}
                       </span>
@@ -669,7 +671,7 @@ export default function VivaPage() {
                     {item.points_missed?.map((pt, pIdx) => (
                       <span
                         key={`m-${pIdx}`}
-                        className="px-2.5 py-1 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20"
+                        className="px-2 py-0.5 rounded bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[11px]"
                       >
                         ✗ {pt}
                       </span>
@@ -681,27 +683,29 @@ export default function VivaPage() {
           </div>
 
           {/* CTA Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border/40">
+          <div className="flex flex-col sm:flex-row gap-3 pt-3 border-t border-white/10">
             <button
               onClick={() => {
                 setSession(null);
                 setFinalReport(null);
               }}
-              className="flex-1 py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-all flex items-center justify-center gap-2"
+              className="btn-secondary flex-1 justify-center py-2.5 text-xs gap-2"
             >
-              <RotateCcw className="w-4 h-4" /> Take Another Viva
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Retake Examination</span>
             </button>
             <button
               onClick={() => navigate("/")}
-              className="flex-1 py-3 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium shadow-md shadow-emerald-500/20 transition-all flex items-center justify-center gap-2"
+              className="btn-primary flex-1 justify-center py-2.5 text-xs gap-2"
             >
-              Return to Dashboard
+              <span>Return to Passbook</span>
             </button>
             <button
               onClick={() => navigate("/gaps")}
-              className="flex-1 py-3 px-4 rounded-xl bg-secondary hover:bg-secondary/80 text-foreground text-sm font-medium transition-all flex items-center justify-center gap-2"
+              className="btn-secondary flex-1 justify-center py-2.5 text-xs gap-2"
             >
-              <BookOpen className="w-4 h-4" /> Review Gaps
+              <BookOpen className="w-3.5 h-3.5" />
+              <span>Review Competency Gaps</span>
             </button>
           </div>
         </div>
@@ -709,3 +713,4 @@ export default function VivaPage() {
     </div>
   );
 }
+
