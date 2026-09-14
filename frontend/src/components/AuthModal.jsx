@@ -15,6 +15,8 @@ import {
   KeyRound,
   CheckCircle2,
   X,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 function getFriendlyErrorMessage(err) {
@@ -67,6 +69,7 @@ export default function AuthModal() {
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   // Sync mode with initialMode when modal opens
   useEffect(() => {
@@ -106,17 +109,21 @@ export default function AuthModal() {
     setIsUnverified(false);
     setLoading(true);
     try {
+      const cleanEmail = (form.email || "").trim();
+      const cleanPassword = (form.password || "").trim();
       if (mode === "login") {
-        await login(form.email, form.password);
+        await login(cleanEmail, cleanPassword);
         onAuthSuccess();
       } else {
         const payload = {
           ...form,
+          email: cleanEmail,
+          password: cleanPassword,
           experience_years: parseFloat(form.experience_years) || 0,
         };
         await register(payload);
         setSuccessMsg(
-          `Account created! A verification link has been sent to ${form.email}. Check your Gmail Inbox and SPAM folder, click the link, then Sign In.`
+          `Account created! A verification link has been sent to ${cleanEmail}. Check your Gmail Inbox and SPAM folder, click the link, then Sign In.`
         );
         setMode("login");
       }
@@ -297,10 +304,13 @@ export default function AuthModal() {
             )}
 
             <div className="relative">
-              <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
+              <Mail className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
               <input
                 required
                 type="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="Official Email Address (@nic.in / @gov.in / email)"
                 className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                 value={form.email}
@@ -310,15 +320,31 @@ export default function AuthModal() {
 
             <div className="space-y-1">
               <div className="relative">
-                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5 pointer-events-none" />
                 <input
                   required
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   placeholder="Password"
-                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
+                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 p-1 focus:outline-none transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-slate-400 hover:text-emerald-400 transition-colors" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-slate-400 hover:text-emerald-400 transition-colors" />
+                  )}
+                </button>
               </div>
               {mode === "login" && (
                 <div className="flex justify-end">

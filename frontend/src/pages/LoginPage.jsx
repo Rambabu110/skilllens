@@ -14,6 +14,8 @@ import {
   Clock,
   KeyRound,
   CheckCircle2,
+  Eye,
+  EyeOff,
 } from "lucide-react";
 
 function getFriendlyErrorMessage(err) {
@@ -63,6 +65,7 @@ export default function LoginPage() {
   const [showForgotModal, setShowForgotModal] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
   const [resetLoading, setResetLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const { login, register, loginWithGoogle, resetPassword, resendVerification } = useAuth();
   const navigate = useNavigate();
@@ -86,12 +89,14 @@ export default function LoginPage() {
     setIsUnverified(false);
     setLoading(true);
     try {
+      const cleanEmail = (form.email || "").trim();
+      const cleanPassword = (form.password || "").trim();
       if (mode === "login") {
-        const user = await login(form.email, form.password);
+        const user = await login(cleanEmail, cleanPassword);
         if (
           user?.is_admin ||
-          form.email.toLowerCase().includes("admin") ||
-          form.email.toLowerCase() === "geneewoan@gmail.com"
+          cleanEmail.toLowerCase().includes("admin") ||
+          cleanEmail.toLowerCase() === "geneewoan@gmail.com"
         ) {
           navigate("/admin");
         } else {
@@ -100,11 +105,13 @@ export default function LoginPage() {
       } else {
         const payload = {
           ...form,
+          email: cleanEmail,
+          password: cleanPassword,
           experience_years: parseFloat(form.experience_years) || 0,
         };
         await register(payload);
         setSuccessMsg(
-          `Account created! A verification link has been sent to ${form.email}. IMPORTANT: Check your Gmail Inbox and SPAM / Junk folder, click the link to activate your account, and then Sign In below.`
+          `Account created! A verification link has been sent to ${cleanEmail}. IMPORTANT: Check your Gmail Inbox and SPAM / Junk folder, click the link to activate your account, and then Sign In below.`
         );
         setMode("login");
       }
@@ -300,10 +307,13 @@ export default function LoginPage() {
             )}
 
             <div className="relative">
-              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+              <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3 pointer-events-none" />
               <input
                 required
                 type="email"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck="false"
                 placeholder="Official Email Address"
                 className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
                 value={form.email}
@@ -313,15 +323,31 @@ export default function LoginPage() {
 
             <div className="space-y-1">
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3" />
+                <Lock className="w-4 h-4 text-slate-500 absolute left-3.5 top-3 pointer-events-none" />
                 <input
                   required
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  autoCapitalize="none"
+                  autoCorrect="off"
+                  spellCheck="false"
                   placeholder="Password"
-                  className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
+                  className="w-full bg-slate-900/70 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-teal-400 focus:ring-1 focus:ring-teal-400 transition-all"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-2 text-slate-400 hover:text-slate-200 p-1 focus:outline-none transition-colors"
+                  tabIndex={-1}
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-slate-400 hover:text-teal-400 transition-colors" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-slate-400 hover:text-teal-400 transition-colors" />
+                  )}
+                </button>
               </div>
               {mode === "login" && (
                 <div className="flex justify-end">
