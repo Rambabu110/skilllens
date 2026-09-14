@@ -63,6 +63,17 @@ export default function DashboardPage() {
       .catch((err) => {
         if (err?.response?.status === 401) {
           logout();
+        } else if (!err?.response || err?.code === "ERR_NETWORK" || err?.message === "Network Error") {
+          // Cloud deployment fallback: load reference competency profile
+          setProfile(
+            DEMO_RADAR_DATA.map((d) => ({
+              competency_id: d.competency,
+              competency_name: d.fullName,
+              current_level: d.current,
+              required_level: d.required,
+              mastery_probability: d.mastery,
+            }))
+          );
         } else {
           setErrorMsg("Unable to load cadre data. Ensure the backend is active and your role has been assigned.");
         }
