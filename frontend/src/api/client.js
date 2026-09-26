@@ -14,11 +14,12 @@ const getApiBase = () => {
   if (envBase && !envBase.includes("localhost") && !envBase.includes("127.0.0.1")) {
     return envBase;
   }
-  // In development mode, use relative URLs ("") so Vite proxy forwards to backend
+  // In local development mode, use relative URLs ("") so Vite proxy forwards to local backend
   if (import.meta.env.DEV) {
     return "";
   }
-  return envBase || "";
+  // In cloud production deployment (e.g. Vercel), always target the live Render backend
+  return "https://skilllensai.onrender.com";
 };
 
 const API_BASE = getApiBase();

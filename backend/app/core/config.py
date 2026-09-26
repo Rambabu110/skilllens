@@ -31,6 +31,7 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24h, fine for a demo
     ADMIN_EMAILS: list[str] = [
         "geneewoan@gmail.com",
+        "geneewoan484@gmail.com",
         "admin@skilllens.in",
         "admin.demo@skilllens.in",
     ]

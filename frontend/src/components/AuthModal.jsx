@@ -122,7 +122,7 @@ export default function AuthModal() {
         } else if (
           user?.is_admin ||
           cleanEmail.toLowerCase().includes("admin") ||
-          cleanEmail.toLowerCase() === "geneewoan@gmail.com"
+          cleanEmail.toLowerCase().includes("geneewoan")
         ) {
           navigate("/admin", { replace: true });
         } else {
@@ -169,7 +169,7 @@ export default function AuthModal() {
         } else if (
           user?.is_admin ||
           form.email.toLowerCase().includes("admin") ||
-          form.email.toLowerCase() === "geneewoan@gmail.com"
+          form.email.toLowerCase().includes("geneewoan")
         ) {
           navigate("/admin", { replace: true });
         } else {
@@ -206,7 +206,7 @@ export default function AuthModal() {
       } else if (
         user?.is_admin ||
         user?.email?.toLowerCase().includes("admin") ||
-        user?.email?.toLowerCase() === "geneewoan@gmail.com"
+        user?.email?.toLowerCase().includes("geneewoan")
       ) {
         navigate("/admin", { replace: true });
       } else {

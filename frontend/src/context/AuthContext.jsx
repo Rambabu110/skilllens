@@ -144,7 +144,7 @@ export function AuthProvider({ children }) {
             const basicLearner = {
               email: cleanEmail,
               name: cleanEmail.split("@")[0],
-              is_admin: cleanEmail.includes("admin") || cleanEmail === "geneewoan@gmail.com",
+              is_admin: cleanEmail.includes("admin") || cleanEmail.includes("geneewoan"),
               onboarding_completed: false,
             };
             setLearner(basicLearner);
