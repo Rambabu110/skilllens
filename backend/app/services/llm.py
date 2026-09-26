@@ -35,16 +35,18 @@ Requirement: Each question MUST have a "difficulty" field as an INTEGER from 1 t
 - 5: Advanced synthesis / edge-case analysis
 Generate a balanced pool with at least 2 questions per difficulty level (1 through 5).
 
-Return ONLY valid JSON (no markdown fences, no commentary) in this exact schema:
-[
-  {{
-    "question": "...",
-    "options": ["...", "...", "...", "..."],
-    "correct_index": 0,
-    "explanation": "1-2 sentence explanation of why this answer is correct",
-    "difficulty": 1
-  }}
-]
+Return ONLY valid JSON (no markdown fences, no commentary) as a JSON object with a "questions" key:
+{{
+  "questions": [
+    {{
+      "question": "...",
+      "options": ["...", "...", "...", "..."],
+      "correct_index": 0,
+      "explanation": "1-2 sentence explanation of why this answer is correct",
+      "difficulty": 1
+    }}
+  ]
+}}
 
 Source material:
 ---
@@ -93,7 +95,16 @@ def _extract_json(text: str):
             end = text.rfind("}")
             if end != -1:
                 text = text[start_brace : end + 1]
-    return json.loads(text.strip())
+    res = json.loads(text.strip())
+    if isinstance(res, dict):
+        if "questions" in res and isinstance(res["questions"], list):
+            return res["questions"]
+        if "quiz" in res and isinstance(res["quiz"], list):
+            return res["quiz"]
+        for v in res.values():
+            if isinstance(v, list):
+                return v
+    return res
 
 
 def _call_gemini(prompt: str) -> str:
@@ -132,7 +143,7 @@ def _call_openai(prompt: str) -> str:
     return resp.choices[0].message.content
 
 
-def _call_groq_raw(prompt: str) -> str:
+def _call_groq_raw(prompt: str, json_mode: bool = False) -> str:
     from groq import Groq
 
     groq_api_key = getattr(settings, "GROQ_API_KEY", None) or os.getenv("GROQ_API_KEY")
@@ -140,24 +151,30 @@ def _call_groq_raw(prompt: str) -> str:
         raise RuntimeError("GROQ_API_KEY not set. Add it to backend/.env")
 
     client = Groq(api_key=groq_api_key)
-    models_to_try = ["llama-3.3-70b-versatile", "groq/compound", "qwen/qwen3.8-27b"]
+    models_to_try = ["openai/gpt-oss-120b", "qwen/qwen3.8-27b", "openai/gpt-oss-20b"]
     last_err = None
     for model_name in models_to_try:
         try:
-            chat_completion = client.chat.completions.create(
-                model=model_name,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=0.3,
-            )
-            return chat_completion.choices[0].message.content or ""
+            kwargs = {
+                "model": model_name,
+                "messages": [{"role": "user", "content": prompt}],
+                "temperature": 0.3,
+                "max_tokens": 3000,
+            }
+            if json_mode:
+                kwargs["response_format"] = {"type": "json_object"}
+            chat_completion = client.chat.completions.create(**kwargs)
+            res_text = chat_completion.choices[0].message.content or ""
+            if res_text.strip():
+                return res_text
         except Exception as e:
             last_err = e
             continue
     raise last_err or RuntimeError("Groq model generation failed across candidate models.")
 
 
-def _call_groq(prompt: str) -> dict:
-    raw = _call_groq_raw(prompt)
+def _call_groq(prompt: str):
+    raw = _call_groq_raw(prompt, json_mode=True)
     return _extract_json(raw)
 
 

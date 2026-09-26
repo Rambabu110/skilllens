@@ -121,8 +121,8 @@ export default function AuthModal() {
           navigate("/onboarding", { replace: true });
         } else if (
           user?.is_admin ||
-          cleanEmail.toLowerCase().includes("admin") ||
-          cleanEmail.toLowerCase().includes("geneewoan")
+          cleanEmail.toLowerCase().startsWith("admin@") ||
+          cleanEmail.toLowerCase() === "admin.demo@skilllens.in"
         ) {
           navigate("/admin", { replace: true });
         } else {
@@ -168,8 +168,8 @@ export default function AuthModal() {
           navigate("/onboarding", { replace: true });
         } else if (
           user?.is_admin ||
-          form.email.toLowerCase().includes("admin") ||
-          form.email.toLowerCase().includes("geneewoan")
+          form.email.toLowerCase().startsWith("admin@") ||
+          form.email.toLowerCase() === "admin.demo@skilllens.in"
         ) {
           navigate("/admin", { replace: true });
         } else {
@@ -205,8 +205,8 @@ export default function AuthModal() {
         navigate("/onboarding", { replace: true });
       } else if (
         user?.is_admin ||
-        user?.email?.toLowerCase().includes("admin") ||
-        user?.email?.toLowerCase().includes("geneewoan")
+        user?.email?.toLowerCase().startsWith("admin@") ||
+        user?.email?.toLowerCase() === "admin.demo@skilllens.in"
       ) {
         navigate("/admin", { replace: true });
       } else {

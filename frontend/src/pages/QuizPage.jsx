@@ -113,6 +113,7 @@ export default function QuizPage() {
         const adaptRes = await client.post("/quiz/adaptive/start", {
           quiz_id: generatedQuiz.id,
           language,
+          num_questions: numQuestions,
         });
         setAdaptiveSession(adaptRes.data);
         setSelectedOption(-1);
@@ -379,7 +380,7 @@ export default function QuizPage() {
                 {mode === "adaptive" ? "QUESTION POOL CAPACITY" : "ITEM COUNT"}
               </label>
               <div className="flex gap-2">
-                {[3, 5, 8, 10].map((count) => (
+                {[3, 5, 10].map((count) => (
                   <button
                     key={count}
                     type="button"
@@ -390,7 +391,7 @@ export default function QuizPage() {
                         : "bg-white/[0.025] text-slate-300 hover:text-white border border-white/10"
                     }`}
                   >
-                    {count}
+                    {count} Questions
                   </button>
                 ))}
               </div>
@@ -471,7 +472,7 @@ export default function QuizPage() {
                   <span className="font-urbanist font-bold text-white tracking-wide">Computerized Adaptive Testing</span>
                   <span className="text-slate-500 font-mono">·</span>
                   <span className="text-[#C084FC] font-mono font-semibold">
-                    Item #{(adaptiveSession.questions_answered || 0) + 1}
+                    Item #{(adaptiveSession.questions_answered || 0) + 1} of {adaptiveSession.max_questions || numQuestions}
                   </span>
                 </div>
 

@@ -96,10 +96,13 @@ async def answer_viva_question(
             mime = audio_file.content_type or "audio/webm"
             transcript = transcribe_audio(raw_bytes, mime)
         except Exception as e:
-            raise HTTPException(
-                status_code=400,
-                detail=f"Audio transcription was unsuccessful: {e}. Please use the text input fallback."
-            )
+            if text_answer and text_answer.strip():
+                transcript = text_answer.strip()
+            else:
+                raise HTTPException(
+                    status_code=400,
+                    detail=f"Audio transcription was unsuccessful: {e}. Please use the text input fallback."
+                )
     elif text_answer and text_answer.strip():
         transcript = text_answer.strip()
     else:

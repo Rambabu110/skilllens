@@ -8,6 +8,7 @@ import {
   MicOff,
   Send,
   Volume2,
+  VolumeX,
   Award,
   CheckCircle2,
   XCircle,
@@ -18,6 +19,7 @@ import {
   FileText,
   Radio,
   BookOpen,
+  Languages,
 } from "lucide-react";
 import StatsCounter from "../components/ui/stats-counter";
 
@@ -33,6 +35,8 @@ export default function VivaPage() {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   // Input & MediaRecorder state
+  const [language, setLanguage] = useState("en"); // "en" | "hi"
+  const [isPlayingAudio, setIsPlayingAudio] = useState(false);
   const [inputMode, setInputMode] = useState("voice"); // "voice" | "text"
   const [isRecording, setIsRecording] = useState(false);
   const [recordingSeconds, setRecordingSeconds] = useState(0);
@@ -41,6 +45,7 @@ export default function VivaPage() {
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const timerRef = useRef(null);
+  const speechRecognitionRef = useRef(null);
 
   // Status & evaluation state
   const [evaluating, setEvaluating] = useState(false);
@@ -55,10 +60,55 @@ export default function VivaPage() {
     async function loadCompetencies() {
       try {
         const res = await client.get("/competency/profile");
-        const list = res.data?.competencies || [];
+        let list = Array.isArray(res.data) ? res.data : (res.data?.competencies || []);
+
+        if (!list || list.length === 0) {
+          try {
+            const allRes = await client.get("/competencies");
+            if (Array.isArray(allRes.data) && allRes.data.length > 0) {
+              list = allRes.data.map((c) => ({
+                competency_id: c.id,
+                competency_name: c.name,
+                current_level: 2.5,
+                required_level: c.required_level || 4.0,
+                gap: Math.max(0, (c.required_level || 4.0) - 2.5),
+                competency_type: c.type || "Domain",
+              }));
+            }
+          } catch {}
+        }
+
+        if (!list || list.length === 0) {
+          try {
+            const posRes = await client.get("/positions");
+            if (Array.isArray(posRes.data) && posRes.data.length > 0) {
+              const detailRes = await client.get(`/positions/${posRes.data[0].id}/detail`);
+              if (detailRes.data?.competencies?.length > 0) {
+                list = detailRes.data.competencies.map((c) => ({
+                  competency_id: c.id,
+                  competency_name: c.name,
+                  current_level: 2.5,
+                  required_level: 4.0,
+                  gap: 1.5,
+                  competency_type: "Domain",
+                }));
+              }
+            }
+          } catch {}
+        }
+
+        if (!list || list.length === 0) {
+          list = [
+            { competency_id: "comp-stat-sampling", competency_name: "Statistical Sampling & Survey Design", current_level: 2.5, required_level: 4.0, gap: 1.5 },
+            { competency_id: "comp-data-quality", competency_name: "Survey Data Quality Assurance", current_level: 2.8, required_level: 4.0, gap: 1.2 },
+            { competency_id: "comp-inference", competency_name: "Estimation & Inference Techniques", current_level: 3.0, required_level: 4.0, gap: 1.0 },
+            { competency_id: "comp-official-stat", competency_name: "Official Statistics Dissemination & Governance", current_level: 3.2, required_level: 4.0, gap: 0.8 },
+            { competency_id: "comp-microdata", competency_name: "Microdata Scrutiny & Field Operations", current_level: 3.5, required_level: 4.0, gap: 0.5 },
+          ];
+        }
+
         setCompetencies(list);
         if (!competencyId && list.length > 0) {
-          // Default to highest gap or first competency
           const weak = [...list].sort((a, b) => (b.gap || 0) - (a.gap || 0))[0];
           if (weak) setCompetencyId(weak.competency_id);
         }
@@ -69,10 +119,16 @@ export default function VivaPage() {
     loadCompetencies();
   }, []);
 
-  // Cleanup timer on unmount
+  // Cleanup timer & TTS on unmount
   useEffect(() => {
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
+      if (speechRecognitionRef.current) {
+        try { speechRecognitionRef.current.stop(); } catch {}
+      }
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
     };
   }, []);
 
@@ -102,7 +158,7 @@ export default function VivaPage() {
     }
   }
 
-  // MediaRecorder Voice Controls
+  // MediaRecorder Voice Controls with Speech Recognition
   async function startRecording() {
     setError("");
     audioChunksRef.current = [];
@@ -121,7 +177,6 @@ export default function VivaPage() {
       recorder.onstop = () => {
         const blob = new Blob(audioChunksRef.current, { type: "audio/webm" });
         setAudioBlob(blob);
-        // Stop all audio tracks to release mic
         stream.getTracks().forEach((track) => track.stop());
       };
 
@@ -129,36 +184,96 @@ export default function VivaPage() {
       setIsRecording(true);
       setRecordingSeconds(0);
 
+      // Start live speech recognition if browser supports it
+      try {
+        const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (SpeechRec) {
+          const rec = new SpeechRec();
+          rec.continuous = true;
+          rec.interimResults = true;
+          rec.lang = language === "hi" ? "hi-IN" : "en-IN";
+          rec.onresult = (evt) => {
+            let spoken = "";
+            for (let i = 0; i < evt.results.length; i++) {
+              spoken += evt.results[i][0].transcript + " ";
+            }
+            if (spoken.trim()) {
+              setTextAnswer(spoken.trim());
+            }
+          };
+          rec.start();
+          speechRecognitionRef.current = rec;
+        }
+      } catch (recErr) {
+        console.warn("Speech recognition notice:", recErr);
+      }
+
       timerRef.current = setInterval(() => {
         setRecordingSeconds((prev) => prev + 1);
       }, 1000);
     } catch (err) {
       console.error("Microphone access failed", err);
-      setError("Microphone access was denied or is unavailable. Please use typed text input instead.");
+      setError("Microphone access was denied or is unavailable. You can type your answer in typed input.");
       setInputMode("text");
     }
   }
 
   function stopRecording() {
     if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
+      try {
+        mediaRecorderRef.current.stop();
+      } catch {}
       setIsRecording(false);
       if (timerRef.current) clearInterval(timerRef.current);
     }
+    if (speechRecognitionRef.current) {
+      try {
+        speechRecognitionRef.current.stop();
+      } catch {}
+      speechRecognitionRef.current = null;
+    }
+  }
+
+  function handleSpeakQuestion() {
+    if (!("speechSynthesis" in window)) return;
+    if (isPlayingAudio) {
+      window.speechSynthesis.cancel();
+      setIsPlayingAudio(false);
+      return;
+    }
+    const qText = language === "hi" && currentQ?.question_hi ? currentQ.question_hi : currentQ?.question_en;
+    if (!qText) return;
+
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(qText);
+    utterance.lang = language === "hi" ? "hi-IN" : "en-IN";
+    utterance.rate = 0.95;
+    utterance.onend = () => setIsPlayingAudio(false);
+    utterance.onerror = () => setIsPlayingAudio(false);
+
+    setIsPlayingAudio(true);
+    window.speechSynthesis.speak(utterance);
   }
 
   async function handleSubmitAnswer() {
-    if (inputMode === "voice" && !audioBlob && !isRecording) {
-      setError("Please record your audio answer before submitting, or switch to typed text.");
-      return;
-    }
-    if (inputMode === "text" && !textAnswer.trim()) {
-      setError("Please type your response before submitting.");
-      return;
-    }
+    let currentBlob = audioBlob;
+    let liveText = textAnswer.trim();
 
     if (isRecording) {
       stopRecording();
+      if (audioChunksRef.current.length > 0) {
+        currentBlob = new Blob(audioChunksRef.current, { type: "audio/webm" });
+        setAudioBlob(currentBlob);
+      }
+    }
+
+    if (inputMode === "voice" && !currentBlob && !liveText) {
+      setError("Please record your audio answer before submitting, or speak into your microphone.");
+      return;
+    }
+    if (inputMode === "text" && !liveText) {
+      setError("Please type your response before submitting.");
+      return;
     }
 
     setError("");
@@ -166,10 +281,11 @@ export default function VivaPage() {
 
     try {
       const formData = new FormData();
-      if (inputMode === "voice" && audioBlob) {
-        formData.append("audio_file", audioBlob, "viva_answer.webm");
-      } else if (textAnswer.trim()) {
-        formData.append("text_answer", textAnswer.trim());
+      if (currentBlob) {
+        formData.append("audio_file", currentBlob, "viva_answer.webm");
+      }
+      if (liveText) {
+        formData.append("text_answer", liveText);
       }
 
       const res = await client.post(
@@ -298,6 +414,33 @@ export default function VivaPage() {
             </select>
           </div>
 
+          {/* Oral Examination Language */}
+          <div className="space-y-2.5">
+            <label className="text-xs font-bold text-slate-300 uppercase tracking-wider font-urbanist flex items-center gap-1.5">
+              <Languages className="w-3.5 h-3.5 text-[#A068FF]" />
+              <span>ORAL EXAMINATION LANGUAGE</span>
+            </label>
+            <div className="flex gap-2.5">
+              {[
+                { id: "en", label: "English" },
+                { id: "hi", label: "हिन्दी (Hindi)" },
+              ].map((lang) => (
+                <button
+                  key={lang.id}
+                  type="button"
+                  onClick={() => setLanguage(lang.id)}
+                  className={`flex-1 py-2.5 rounded-xl text-xs font-medium transition-all ${
+                    language === lang.id
+                      ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white font-bold shadow-[0_0_10px_rgba(160,104,255,0.4)]"
+                      : "bg-white/[0.025] text-slate-300 hover:text-white border border-white/10"
+                  }`}
+                >
+                  {lang.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-2">
             <div className="p-5 rounded-xl bg-white/[0.025] border border-white/10 space-y-2">
               <div className="w-8 h-8 rounded-lg bg-[#A068FF]/15 text-[#A068FF] border border-[#A068FF]/30 flex items-center justify-center mb-2">
@@ -357,9 +500,32 @@ export default function VivaPage() {
               <span className="text-slate-400 uppercase tracking-wider font-semibold">
                 Oral Item #{currentIndex + 1} / {totalQuestions}
               </span>
-              <span className="px-3 py-1 rounded-full bg-white/[0.04] text-[#C084FC] border border-white/10 font-bold">
-                Max Score: 10 pts
-              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleSpeakQuestion}
+                  className={`px-3 py-1.5 rounded-full border text-xs font-mono font-bold flex items-center gap-1.5 transition-all ${
+                    isPlayingAudio
+                      ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40 animate-pulse shadow-[0_0_10px_rgba(16,185,129,0.3)]"
+                      : "bg-white/[0.04] text-[#C084FC] border-white/10 hover:border-[#A068FF]/50"
+                  }`}
+                >
+                  {isPlayingAudio ? (
+                    <>
+                      <VolumeX className="w-3.5 h-3.5" />
+                      <span>Speaking…</span>
+                    </>
+                  ) : (
+                    <>
+                      <Volume2 className="w-3.5 h-3.5 text-[#A068FF]" />
+                      <span>Listen to Examiner</span>
+                    </>
+                  )}
+                </button>
+                <span className="px-3 py-1 rounded-full bg-white/[0.04] text-[#C084FC] border border-white/10 font-bold">
+                  Max Score: 10 pts
+                </span>
+              </div>
             </div>
 
             {/* English Question */}
@@ -450,6 +616,25 @@ export default function VivaPage() {
                       </div>
                     )}
                   </div>
+
+                  {/* Live Speech Recognition Transcript Box */}
+                  {(isRecording || textAnswer.trim()) && (
+                    <div className="w-full max-w-xl p-4 rounded-xl bg-white/[0.03] border border-[#A068FF]/30 space-y-2 transition-all">
+                      <div className="flex items-center justify-between text-[11px] font-mono font-bold text-[#C084FC]">
+                        <span className="flex items-center gap-1.5">
+                          <Sparkles className="w-3.5 h-3.5 text-[#A068FF]" /> Live Speech Transcript
+                        </span>
+                        {isRecording && (
+                          <span className="text-emerald-400 flex items-center gap-1.5 font-mono text-[10px]">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" /> Listening ({language === "hi" ? "हिन्दी" : "English"})
+                          </span>
+                        )}
+                      </div>
+                      <div className="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans italic bg-black/30 p-3 rounded-lg border border-white/5 min-h-[48px]">
+                        {textAnswer.trim() || (isRecording ? "Listening to your spoken answer…" : "")}
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
@@ -472,7 +657,7 @@ export default function VivaPage() {
               {/* Submit Evaluation Button */}
               <button
                 onClick={handleSubmitAnswer}
-                disabled={evaluating || (inputMode === "voice" && !audioBlob && !isRecording) || (inputMode === "text" && !textAnswer.trim())}
+                disabled={evaluating || (inputMode === "voice" && !audioBlob && !isRecording && !textAnswer.trim()) || (inputMode === "text" && !textAnswer.trim())}
                 className="btn-primary w-full justify-center py-3 text-sm font-bold gap-2.5 shadow-[0_0_20px_rgba(160,104,255,0.4)]"
               >
                 {evaluating ? (

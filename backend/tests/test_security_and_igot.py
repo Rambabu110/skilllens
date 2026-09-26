@@ -25,7 +25,7 @@ client = TestClient(app)
 def test_admin_allowlist_security():
     # Email allowlist check
     assert is_admin_email("admin.demo@skilllens.in") is True
-    assert is_admin_email("geneewoan@gmail.com") is True
+    assert is_admin_email("admin@skilllens.in") is True
 
     # Insecure string matching defense: attacker having "admin" in email must be rejected!
     assert is_admin_email("admin_impostor@malicious.org") is False

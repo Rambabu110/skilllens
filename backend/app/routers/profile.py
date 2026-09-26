@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session, joinedload
 from app.core.database import get_db
 from app.core.deps import get_current_learner
 from app.models.models import Learner, Position, Role, Activity, Competency, LearnerCompetencyScore
-from app.schemas.schemas import PositionOut, CompetencyScoreOut, OnboardingRequest, LearnerOut
+from app.schemas.schemas import PositionOut, CompetencyScoreOut, OnboardingRequest, LearnerOut, CompetencyOut
 from app.services.competency import ensure_competency_scores, get_required_competencies_for_learner
 from app.ml.explain import explain_prediction
 
@@ -216,4 +216,11 @@ def explain_my_score(
         "is_calibrated": not bool(current.behavioral_features),
         **breakdown,
     }
+
+
+@router.get("/competencies", response_model=list[CompetencyOut])
+def get_all_competencies(db: Session = Depends(get_db)):
+    """Returns all standard FRAC competencies registered in the framework."""
+    return db.query(Competency).all()
+
 

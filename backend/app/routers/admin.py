@@ -308,7 +308,7 @@ def bootstrap_admin(
     """
     Bootstrap utility to grant admin access to designated admin emails or the first user.
     """
-    if is_admin_email(current.email) or db.query(Learner).filter(Learner.is_admin.is_(True)).count() == 0:
+    if is_admin_email(current.email):
         current.is_admin = True
         db.commit()
         return {"status": "success", "message": f"{current.email} is now an Administrator", "is_admin": True}

@@ -43,7 +43,7 @@ def login(payload: LoginRequest, request: Request, db: Session = Depends(get_db)
     user_agent = request.headers.get("user-agent", "")
 
     is_demo_account = payload.email in [
-        "admin.demo@skilllens.in", "aditi.demo@skilllens.in", "geneewoan@gmail.com",
+        "admin.demo@skilllens.in", "aditi.demo@skilllens.in",
         "survey.sup@skilllens.in", "analyst.demo@skilllens.in"
     ]
     valid_password = False

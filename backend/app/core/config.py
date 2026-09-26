@@ -30,8 +30,6 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24h, fine for a demo
     ADMIN_EMAILS: list[str] = [
-        "geneewoan@gmail.com",
-        "geneewoan484@gmail.com",
         "admin@skilllens.in",
         "admin.demo@skilllens.in",
     ]
@@ -41,8 +39,8 @@ class Settings(BaseSettings):
 
     # --- LLM ---
     # Provider abstraction lives in app/services/llm.py so switching
-    # Gemini <-> OpenAI later is a one-file change, not a rewrite.
-    LLM_PROVIDER: str = "gemini"  # or "openai"
+    # Gemini <-> Groq <-> OpenAI later is a one-file change, not a rewrite.
+    LLM_PROVIDER: str = "groq"  # default to high-speed Groq
     GEMINI_API_KEY: str | None = None
     GROQ_API_KEY: str | None = None
     OPENAI_API_KEY: str | None = None

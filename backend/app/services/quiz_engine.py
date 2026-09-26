@@ -14,7 +14,7 @@ from app.services.competency import apply_quiz_result_to_competencies
 ADAPTIVE_SESSIONS: Dict[str, Dict[str, Any]] = {}
 
 
-def start_adaptive_session(quiz: Quiz, learner_id: str) -> Dict[str, Any]:
+def start_adaptive_session(quiz: Quiz, learner_id: str, max_questions: int = 5) -> Dict[str, Any]:
     """
     Initializes a new adaptive quiz session starting at theta = 3.0 (mid-scale 1-5).
     Selects the first question closest to difficulty 3.
@@ -25,6 +25,7 @@ def start_adaptive_session(quiz: Quiz, learner_id: str) -> Dict[str, Any]:
         raise ValueError("Quiz has no questions available.")
 
     initial_theta = 3.0
+    target_count = max(1, min(max_questions, len(questions)))
 
     # Pick question with difficulty closest to 3.0
     best_idx = 0
@@ -47,6 +48,7 @@ def start_adaptive_session(quiz: Quiz, learner_id: str) -> Dict[str, Any]:
         "history": [],
         "delta_history": [],
         "pool": questions,
+        "max_questions": target_count,
         "competency_tags": quiz.competency_tags or [],
     }
 
@@ -63,6 +65,7 @@ def start_adaptive_session(quiz: Quiz, learner_id: str) -> Dict[str, Any]:
             "difficulty": first_q.get("difficulty", 3),
         },
         "questions_answered": 0,
+        "max_questions": target_count,
         "total_pool_size": len(questions),
     }
 
@@ -127,7 +130,8 @@ def process_adaptive_answer(
     delta_hist = session["delta_history"]
     converged = len(delta_hist) >= 3 and all(d < 0.1 for d in delta_hist[-3:])
     exhausted = len(remaining_indices) == 0
-    max_questions_reached = len(session["history"]) >= min(10, len(questions))
+    max_target = session.get("max_questions") or min(10, len(questions))
+    max_questions_reached = len(session["history"]) >= min(max_target, len(questions))
 
     if converged or exhausted or max_questions_reached:
         # Quiz Complete!
@@ -223,6 +227,7 @@ def process_adaptive_answer(
             "difficulty": next_diff,
         },
         "questions_answered": len(session["history"]),
+        "max_questions": max_target,
         "last_answer_correct": is_correct,
         "last_explanation": q["explanation"],
     }

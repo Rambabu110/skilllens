@@ -313,8 +313,7 @@ def generate_quiz(
         competency_tags = [name_to_id[n] for n in tagged_names if n in name_to_id]
         auto_tagged = bool(competency_tags)
 
-        # True RAG grounded question generation
-        num_to_gen = 10 if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
+        num_to_gen = max(payload.num_questions, 6) if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
         questions = generate_rag_grounded_questions(db, doc, n=num_to_gen, language=payload.language)
 
     elif payload.module_id:
@@ -331,7 +330,7 @@ def generate_quiz(
             f"Description: {mod.description or mod.title}\n"
             f"Curriculum: Core methods and standards in {mod.title}."
         )
-        num_to_gen = 10 if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
+        num_to_gen = max(payload.num_questions, 6) if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
         questions = generate_quiz_questions(content, n=num_to_gen, language=payload.language)
         for q in questions:
             q["document_name"] = mod.title
@@ -344,7 +343,7 @@ def generate_quiz(
         name_to_id = {c.name: c.id for c in all_competencies}
         tagged_names = tag_competencies(content, list(name_to_id.keys()))
         competency_tags = [name_to_id[n] for n in tagged_names if n in name_to_id]
-        num_to_gen = 10 if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
+        num_to_gen = max(payload.num_questions, 6) if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
         questions = generate_quiz_questions(content, n=num_to_gen, language=payload.language)
     else:
         # Default Cadre Assessment: generate assessment across core cadre competencies
@@ -360,7 +359,7 @@ def generate_quiz(
             "3. Estimation & Inference: Expansion weights, variance estimation, standard errors, survey reporting.\n"
             "4. Report Writing & Governance: Official statistics dissemination, ethics, and administrative data standards."
         )
-        num_to_gen = 10 if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
+        num_to_gen = max(payload.num_questions, 6) if (getattr(payload, "mode", "adaptive") == "adaptive") else payload.num_questions
         questions = generate_quiz_questions(content, n=num_to_gen, language=payload.language)
         for q in questions:
             q["document_name"] = "National Statistical System Cadre Framework"
@@ -437,7 +436,7 @@ def start_adaptive_quiz(
     if not quiz:
         raise HTTPException(status_code=404, detail="Quiz not found")
     try:
-        return start_adaptive_session(quiz, current.id)
+        return start_adaptive_session(quiz, current.id, max_questions=payload.num_questions or 5)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

@@ -106,47 +106,62 @@ Respond ONLY with a valid JSON array of 3 objects in this exact format:
 
 def transcribe_audio(audio_bytes: bytes, mime_type: str = "audio/webm") -> str:
     """
-    Transcribes spoken Hindi/English audio verbatim using Gemini multimodal.
-    If Gemini fails or is unreachable, raises an informative exception so caller/frontend
-    can gracefully prompt for typed text without crashing.
+    Transcribes spoken Hindi/English audio verbatim using Groq Whisper (ultra-fast)
+    with Gemini multimodal as fallback.
     """
-    if not settings.GEMINI_API_KEY:
-        raise RuntimeError("GEMINI_API_KEY is not configured for audio transcription.")
+    import io
+    import os
 
-    try:
-        import google.generativeai as genai
-        genai.configure(api_key=settings.GEMINI_API_KEY)
+    # 1. Primary: Groq Whisper (whisper-large-v3-turbo)
+    groq_api_key = getattr(settings, "GROQ_API_KEY", None) or os.getenv("GROQ_API_KEY")
+    if groq_api_key:
+        try:
+            from groq import Groq
+            client = Groq(api_key=groq_api_key)
+            buf = io.BytesIO(audio_bytes)
+            ext = "webm"
+            if "wav" in mime_type:
+                ext = "wav"
+            elif "mp3" in mime_type or "mpeg" in mime_type:
+                ext = "mp3"
+            elif "m4a" in mime_type or "mp4" in mime_type:
+                ext = "m4a"
+            elif "ogg" in mime_type:
+                ext = "ogg"
+            buf.name = f"audio_answer.{ext}"
 
-        models = ["gemini-1.5-flash", "gemini-flash-latest", "gemini-2.5-flash"]
-        prompt = "Transcribe this Hindi/English oral examination answer verbatim. Do not add commentary or introductory text, only the transcript."
+            transcription = client.audio.transcriptions.create(
+                file=buf,
+                model="whisper-large-v3-turbo",
+                response_format="text"
+            )
+            text = str(transcription).strip() if transcription else ""
+            if text:
+                return text
+        except Exception as e:
+            logger.warning(f"Groq Whisper transcription failed ({e}), trying Gemini fallback...")
 
-        # Normalize common audio mimes
-        clean_mime = mime_type.split(";")[0].strip() if mime_type else "audio/webm"
-        if not clean_mime:
-            clean_mime = "audio/webm"
+    # 2. Secondary: Gemini multimodal
+    if settings.GEMINI_API_KEY:
+        try:
+            import google.generativeai as genai
+            genai.configure(api_key=settings.GEMINI_API_KEY)
+            models = ["gemini-1.5-flash", "gemini-flash-latest"]
+            prompt = "Transcribe this Hindi/English oral examination answer verbatim. Do not add commentary or introductory text, only the transcript."
+            clean_mime = mime_type.split(";")[0].strip() if mime_type else "audio/webm"
+            audio_part = {"mime_type": clean_mime, "data": audio_bytes}
+            for m_name in models:
+                try:
+                    model = genai.GenerativeModel(m_name)
+                    resp = model.generate_content([prompt, audio_part])
+                    if resp and resp.text and resp.text.strip():
+                        return resp.text.strip()
+                except Exception:
+                    continue
+        except Exception as e:
+            logger.warning(f"Gemini transcription failed: {e}")
 
-        audio_part = {
-            "mime_type": clean_mime,
-            "data": audio_bytes
-        }
-
-        last_err = None
-        for m_name in models:
-            try:
-                model = genai.GenerativeModel(m_name)
-                resp = model.generate_content([prompt, audio_part])
-                if resp and resp.text:
-                    transcript = resp.text.strip()
-                    if transcript:
-                        return transcript
-            except Exception as e:
-                last_err = e
-                continue
-
-        raise last_err or RuntimeError("Audio transcription yielded no text.")
-    except Exception as e:
-        logger.warning(f"Audio transcription failed: {e}")
-        raise RuntimeError(f"Audio transcription failed ({e}). Please provide typed text instead.")
+    raise RuntimeError("Audio transcription could not recognize speech. Please verify your microphone or use typed text.")
 
 
 def _fallback_evaluate_answer(question: str, expected_points: List[str], transcript: str) -> Dict[str, Any]:
