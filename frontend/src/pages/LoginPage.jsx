@@ -179,6 +179,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const user = await loginWithGoogle();
+      if (!user) {
+        // User cancelled the popup — do nothing
+        setLoading(false);
+        return;
+      }
       if (
         user?.is_admin ||
         user?.email?.toLowerCase().includes("admin") ||

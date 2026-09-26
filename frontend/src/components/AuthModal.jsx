@@ -170,7 +170,12 @@ export default function AuthModal() {
     setIsUnverified(false);
     setLoading(true);
     try {
-      await loginWithGoogle();
+      const user = await loginWithGoogle();
+      if (!user) {
+        // User cancelled the popup
+        setLoading(false);
+        return;
+      }
       onAuthSuccess();
     } catch (err) {
       setError(getFriendlyErrorMessage(err));

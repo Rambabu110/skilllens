@@ -120,10 +120,6 @@ export function AuthProvider({ children }) {
       const cleanEmail = (email || "").trim().toLowerCase();
       const cleanPassword = (password || "").trim();
 
-      const isAdminAccount =
-        cleanEmail === "geneewoan@gmail.com" ||
-        cleanEmail.includes("admin");
-
       // 1. Direct Backend API Authentication (checks SQLite/Postgres for pre-seeded & newly created officers/admins)
       try {
         const res = await client.post("/auth/login", {
@@ -155,37 +151,22 @@ export function AuthProvider({ children }) {
         console.warn("Direct backend login note:", backendErr.response?.data?.detail || backendErr.message);
       }
 
+      // 2. Firebase Authentication (real credentials only — no fallbacks)
       let cred;
       try {
         cred = await firebaseLogin(cleanEmail, cleanPassword);
       } catch (err) {
-        console.warn("Firebase login note:", err.code, err.message);
-        // If domain is not yet whitelisted in Firebase Console (e.g. on Vercel)
-        // OR if admin account geneewoan@gmail.com is logging in
-        if (
-          err.code === "auth/unauthorized-domain" ||
-          (isAdminAccount && (
-            cleanPassword.toLowerCase().includes("geneew") ||
-            cleanPassword.includes("ASD123") ||
-            cleanPassword === "admin123" ||
-            cleanPassword.length >= 6
-          ))
-        ) {
-          console.warn("Enabling verified session fallback for:", cleanEmail);
-          const fallbackUser = {
-            uid: "cadre-" + Math.abs(cleanEmail.split("").reduce((a, b) => ((a << 5) - a + b.charCodeAt(0)) | 0, 0)),
-            email: cleanEmail,
-            displayName: cleanEmail === "geneewoan@gmail.com" ? "Super Admin" : cleanEmail.split("@")[0],
-            emailVerified: true,
-            is_admin: isAdminAccount,
-            role: isAdminAccount ? "admin" : "officer",
-            getIdToken: async () => "token-" + btoa(JSON.stringify({ email: cleanEmail, name: cleanEmail === "geneewoan@gmail.com" ? "Super Admin" : cleanEmail.split("@")[0] })),
-          };
-          return await syncWithBackend(fallbackUser);
+        // Provide user-friendly messages for common Firebase errors
+        if (err.code === "auth/unauthorized-domain") {
+          const domainErr = new Error(
+            "This domain is not authorized for sign-in. Please add this domain to your Firebase Console → Authentication → Settings → Authorized domains."
+          );
+          domainErr.code = err.code;
+          throw domainErr;
         }
         throw err;
       }
-      
+
       // Crucial: reload user profile from Firebase to fetch updated emailVerified status
       if (cred.user) {
         try {
@@ -205,8 +186,8 @@ export function AuthProvider({ children }) {
         }
       }
 
-      // Strictly enforce email verification (allow designated super admin to bypass verification if needed)
-      if (!cred.user.emailVerified && !isAdminAccount) {
+      // Strictly enforce email verification
+      if (!cred.user.emailVerified) {
         await firebaseLogout();
         const err = new Error(
           "Your email address has not been verified yet. Please check your Gmail Inbox or Spam folder and click the verification link before signing in."
@@ -278,11 +259,11 @@ export function AuthProvider({ children }) {
         await firebaseRegister(cleanEmail, cleanPassword, payload.name);
       } catch (err) {
         if (err.code === "auth/unauthorized-domain") {
-          console.warn("Firebase unauthorized domain on Vercel during register. Storing registration credentials locally.");
-          return {
-            email: payload.email,
-            needsVerification: false,
-          };
+          const domainErr = new Error(
+            "This domain is not authorized for registration. Please add this domain to your Firebase Console → Authentication → Settings → Authorized domains."
+          );
+          domainErr.code = err.code;
+          throw domainErr;
         }
         throw err;
       }
@@ -302,20 +283,24 @@ export function AuthProvider({ children }) {
       const cred = await firebaseLoginWithGoogle();
       return await syncWithBackend(cred.user);
     } catch (err) {
-      if (
-        err.code === "auth/unauthorized-domain" ||
-        err.code === "auth/popup-blocked" ||
-        err.code === "auth/cancelled-popup-request"
-      ) {
-        console.warn("Firebase Google sign-in fallback on Vercel/mobile. Falling back to verified cadre officer session.");
-        const fallbackUser = {
-          uid: "google-cadre-user",
-          email: "officer@mospi.gov.in",
-          displayName: "Cadre Statistical Officer",
-          emailVerified: true,
-          getIdToken: async () => "token-" + Date.now(),
-        };
-        return await syncWithBackend(fallbackUser);
+      // Provide user-friendly error messages — NEVER fall back to fake accounts
+      if (err.code === "auth/unauthorized-domain") {
+        const domainErr = new Error(
+          "This domain is not authorized for Google Sign-In. Please add this domain to your Firebase Console → Authentication → Settings → Authorized domains."
+        );
+        domainErr.code = err.code;
+        throw domainErr;
+      }
+      if (err.code === "auth/popup-blocked") {
+        const popupErr = new Error(
+          "The sign-in popup was blocked by your browser. Please allow popups for this site and try again."
+        );
+        popupErr.code = err.code;
+        throw popupErr;
+      }
+      if (err.code === "auth/cancelled-popup-request") {
+        // User cancelled — not an error, just return silently
+        return null;
       }
       throw err;
     }
