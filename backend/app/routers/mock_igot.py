@@ -1,72 +1,93 @@
 """
-Mock iGOT Karmayogi Adapter (PRD Part 6).
+iGOT-Compatible Integration Adapter (PRD Part 18, 19, 20)
 
-iGOT Karmayogi has no public API, so this router simulates the contract
-a real integration would use: SSO validation, resource/course catalog
-lookup by competency, notifications, and a FRAC lookup for a position.
-Swapping this for a real Karmayogi Bharat connector means replacing
-this file's internals only -- the rest of the app calls these same
-shapes regardless of what's behind them.
+iGOT Karmayogi does not offer a public external developer API.
+This router provides an institutional integration adapter contract:
+SSO token validation, course catalog lookup, notifications, and FRAC tree hierarchy.
+All responses are clearly stamped with adapter metadata:
+"source": "prototype_mock_catalog" / "adapter_type": "iGOT-Compatible Integration Adapter"
 """
 from datetime import datetime
-
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
 from app.core.database import get_db
-from app.models.models import LearningModule, ModuleCompetency, Position, Role, Activity, Competency
+from app.models.models import Position, Role, Activity, Competency
+from app.services.igot_provider import default_igot_provider, IGOTSSOProvider
 
-router = APIRouter(prefix="/mock-igot", tags=["mock-igot (simulated integration)"])
+router = APIRouter(prefix="/mock-igot", tags=["iGOT-Compatible Adapter (Prototype Simulation)"])
 
 
 @router.post("/sso/validate")
 def validate_sso(token: str):
-    # Real iGOT SSO would validate against DoPT's identity provider.
-    # This mock always succeeds structurally so downstream code can be
-    # written against the real expected response shape.
-    return {"valid": bool(token), "provider": "mock-igot-sso", "checked_at": datetime.utcnow().isoformat()}
+    """
+    Simulates institutional iGOT Karmayogi Single Sign-On check.
+    Clearly labeled as prototype simulation.
+    """
+    return IGOTSSOProvider.authenticate_user(token)
+
+
+@router.get("/catalog")
+def get_catalog():
+    """
+    Retrieves the verified prototype course catalog mapped to official statistical competencies.
+    """
+    return {
+        "adapter_type": "iGOT-Compatible Integration Adapter",
+        "provenance": "prototype_mock_catalog",
+        "courses": default_igot_provider.get_courses(limit=50),
+    }
 
 
 @router.get("/resources")
-def get_resources(competency: str, db: Session = Depends(get_db)):
-    """Simulates GET /resources?skill=X against iGOT's course catalog."""
-    comp = db.query(Competency).filter(Competency.name.ilike(f"%{competency}%")).first()
-    if not comp:
-        return {"competency": competency, "resources": [], "source": "mock_igot"}
-
-    links = db.query(ModuleCompetency).filter(ModuleCompetency.competency_id == comp.id).all()
-    modules = [db.query(LearningModule).get(l.module_id) for l in links]
+def get_resources(competency: str):
+    """
+    Queries iGOT-compatible course catalog by FRAC competency name.
+    """
+    matches = default_igot_provider.get_course_competencies(competency)
     return {
         "competency": competency,
-        "source": "mock_igot",
+        "adapter_type": "iGOT-Compatible Integration Adapter",
+        "source": "prototype_mock_catalog",
         "resources": [
-            {"id": m.id, "title": m.title, "duration_minutes": m.duration_minutes, "level": m.level}
-            for m in modules if m
+            {
+                "id": c["course_id"],
+                "title": c["title"],
+                "duration_minutes": c["duration_minutes"],
+                "level": c["level"],
+                "provider": c["provider"],
+                "url": c["url"],
+            }
+            for c in matches
         ],
     }
 
 
 @router.post("/notify")
 def notify(learner_id: str, message: str):
-    # Real iGOT would push this through its notification service.
-    print(f"[mock-igot notify] to={learner_id}: {message}")
-    return {"status": "queued", "provider": "mock-igot-notify"}
+    """
+    Simulates notification push to iGOT Karmayogi notification center.
+    """
+    return default_igot_provider.notify(learner_id, message)
 
 
 @router.get("/frac/{position_id}")
 def get_frac_tree(position_id: str, db: Session = Depends(get_db)):
     """
-    Simulates an official FRAC lookup: Position -> Roles -> Activities ->
-    Competencies. This is the endpoint worth pointing judges to -- it
-    shows the system understood FRAC is the real underlying mechanism,
-    not just 'iGOT = a course website'.
+    Simulates official FRAC lookup: Position -> Roles -> Activities -> Competencies.
+    Demonstrates true alignment with Mission Karmayogi's institutional architecture.
     """
     position = db.query(Position).get(position_id)
     if not position:
-        return {"error": "position not found"}
+        return {"error": "Position not found in FRAC registry"}
 
     roles = db.query(Role).filter(Role.position_id == position.id).all()
-    tree = {"position": position.title, "department": position.department, "roles": []}
+    tree = {
+        "framework": "Mission Karmayogi FRAC Tier-1",
+        "position": position.title,
+        "department": position.department,
+        "roles": [],
+    }
     for role in roles:
         activities = db.query(Activity).filter(Activity.role_id == role.id).all()
         role_node = {"role_name": role.role_name, "activities": []}
@@ -75,9 +96,15 @@ def get_frac_tree(position_id: str, db: Session = Depends(get_db)):
             role_node["activities"].append({
                 "description": act.description,
                 "competencies": [
-                    {"name": c.name, "type": c.type.value, "required_level": c.required_level}
+                    {
+                        "id": c.id,
+                        "name": c.name,
+                        "type": c.type.value if hasattr(c.type, "value") else c.type,
+                        "required_level": c.required_level,
+                    }
                     for c in comps
                 ],
             })
         tree["roles"].append(role_node)
     return tree
+

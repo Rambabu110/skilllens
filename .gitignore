@@ -49,3 +49,8 @@ Thumbs.db
 *.pdf
 Basic_English_Grammar_Book_1.pdf
 .vercel
+*.bak
+backend/data/vector_indexes/
+graphify-out/
+ui-libraries-agent-rules*.md
+

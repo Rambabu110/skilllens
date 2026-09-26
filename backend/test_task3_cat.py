@@ -106,7 +106,7 @@ def run_test():
 
         if score_row:
             print("\nDatabase Verified LearnerCompetencyScore:")
-            print(f"  current_score: {score_row.current_score}")
+            print(f"  current_level: {score_row.current_level}")
             print(f"  ability_theta: {score_row.ability_theta}")
             print(f"  questions_asked: {score_row.questions_asked}")
             print(f"  mastery_probability: {score_row.mastery_probability}")

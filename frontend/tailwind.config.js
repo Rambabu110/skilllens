@@ -1,19 +1,26 @@
 /** @type {import('tailwindcss').Config} */
 export default {
-  content: ["./index.html", "./src/**/*.{js,jsx}"],
+  content: ["./index.html", "./src/**/*.{js,jsx,ts,tsx}"],
   darkMode: "class",
   theme: {
     extend: {
       colors: {
         canvas: {
-          DEFAULT: "#070D1E",
-          deep: "#050914",
-          elevated: "#0B132B",
+          DEFAULT: "#060218",
+          deep: "#040110",
+          elevated: "#0E0728",
         },
         substrate: {
-          DEFAULT: "#131E3A",
-          light: "#1C2541",
-          elevated: "#223154",
+          DEFAULT: "#130E2E",
+          light: "#1C1440",
+          elevated: "#251B54",
+        },
+        violet: {
+          400: "#C084FC",
+          500: "#A068FF",
+          600: "#8B5CF6",
+          700: "#7C3AED",
+          glow: "rgba(160, 104, 255, 0.35)",
         },
         teal: {
           300: "#7BF1D8",
@@ -35,17 +42,21 @@ export default {
           500: "#EF4444",
         },
         surface: {
-          base: "#050914",
-          card: "#0f172a",
-          cardHover: "#131e35",
-          well: "#070d18",
+          base: "#060218",
+          card: "rgba(15, 8, 38, 0.7)",
+          cardHover: "rgba(25, 14, 58, 0.8)",
+          well: "rgba(9, 4, 24, 0.6)",
           border: "rgba(255, 255, 255, 0.08)",
           borderStrong: "rgba(255, 255, 255, 0.16)",
         },
       },
       fontFamily: {
-        sans: ["Plus Jakarta Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
-        display: ["Outfit", "Plus Jakarta Sans", "sans-serif"],
+        sans: ["Inter", "Plus Jakarta Sans", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        inter: ["Inter", "-apple-system", "BlinkMacSystemFont", "Segoe UI", "sans-serif"],
+        instrument: ["'Instrument Serif'", "Georgia", "serif"],
+        serif: ["'Instrument Serif'", "Georgia", "serif"],
+        display: ["Urbanist", "Inter", "sans-serif"],
+        urbanist: ["Urbanist", "Inter", "sans-serif"],
         mono: ["JetBrains Mono", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {

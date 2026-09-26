@@ -412,7 +412,7 @@ def _generate_fallback_questions(content: str, n: int = 5, language: str = "en")
                     "अनुमानित सांख्यिकी को छोड़ देना" if is_hindi else "Relying on convenience sampling methods"
                 ],
                 "correct_index": 0,
-                "explanation": "बड़ा नमूना आकार मानक त्रुटि को $1/\sqrt{n}$ की दर से घटाता है।" if is_hindi else "Standard error is inversely proportional to the square root of sample size.",
+                "explanation": "बड़ा नमूना आकार मानक त्रुटि को $1/\\sqrt{n}$ की दर से घटाता है।" if is_hindi else "Standard error is inversely proportional to the square root of sample size.",
                 "difficulty": 2
             },
             # Difficulty 3
@@ -517,7 +517,7 @@ def generate_quiz_questions(content: str, n: int = 5, language: str = "en") -> l
                 for q in parsed:
                     q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
                 print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
-                return parsed[:request_n]
+                return parsed[:n]
             print("[LLM Provider] Groq returned empty/invalid JSON, falling through to Gemini...")
         except Exception as e:
             print(f"[LLM Provider] Groq failed ({e}), falling through to Gemini...")
@@ -530,7 +530,7 @@ def generate_quiz_questions(content: str, n: int = 5, language: str = "en") -> l
                 for q in parsed:
                     q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
                 print("[LLM Provider] Served by Gemini")
-                return parsed[:request_n]
+                return parsed[:n]
             print("[LLM Provider] Gemini returned empty/invalid JSON, falling through to offline fallback...")
         except Exception as e:
             print(f"[LLM Provider] Gemini failed ({e}), falling through to offline fallback...")
@@ -543,7 +543,7 @@ def generate_quiz_questions(content: str, n: int = 5, language: str = "en") -> l
                 for q in parsed:
                     q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
                 print("[LLM Provider] Served by Gemini")
-                return parsed[:request_n]
+                return parsed[:n]
             print("[LLM Provider] Gemini returned empty/invalid JSON, falling through to Groq...")
         except Exception as e:
             print(f"[LLM Provider] Gemini failed ({e}), falling through to Groq...")
@@ -555,14 +555,14 @@ def generate_quiz_questions(content: str, n: int = 5, language: str = "en") -> l
                 for q in parsed:
                     q["difficulty"] = _normalize_difficulty(q.get("difficulty"))
                 print("[LLM Provider] Served by Groq (llama-3.3-70b-versatile)")
-                return parsed[:request_n]
+                return parsed[:n]
             print("[LLM Provider] Groq returned empty/invalid JSON, falling through to offline fallback...")
         except Exception as e:
             print(f"[LLM Provider] Groq failed ({e}), falling through to offline fallback...")
 
     # 3. Deterministic offline fallback (never fails)
     print("[LLM Provider] Served by Deterministic Offline Fallback")
-    return _generate_fallback_questions(content, n=request_n, language=language)
+    return _generate_fallback_questions(content, n=n, language=language)
 
 
 def tag_competencies(content: str, competency_names: list[str]) -> list[str]:

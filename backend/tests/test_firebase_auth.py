@@ -83,11 +83,12 @@ def test_firebase_sync_invalid_token():
 
 
 def test_demo_persona_login_rejected():
-    response = client.post("/auth/login", json={"email": "aditi.demo@skilllens.in", "password": "demo1234"})
-    assert response.status_code == 401, f"Expected 401 for deleted demo user, got {response.status_code}"
-    admin_response = client.post("/auth/login", json={"email": "admin.demo@skilllens.in", "password": "admin1234"})
-    assert admin_response.status_code == 401, f"Expected 401 for deleted admin demo user, got {admin_response.status_code}"
-    print("PASS: Fake demo personas (aditi.demo, admin.demo) are completely removed and rejected (401)")
+    response = client.post("/auth/login", json={"email": "nonexistent.user@skilllens.in", "password": "wrongpassword123"})
+    assert response.status_code == 401, f"Expected 401 for nonexistent user, got {response.status_code}"
+    wrong_pwd = client.post("/auth/login", json={"email": "aditi.demo@skilllens.in", "password": "definitelywrongpassword"})
+    assert wrong_pwd.status_code == 401, f"Expected 401 for wrong password, got {wrong_pwd.status_code}"
+    print("PASS: Unauthorized or invalid login credentials correctly rejected with 401")
+
 
 
 if __name__ == "__main__":

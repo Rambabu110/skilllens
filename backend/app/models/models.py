@@ -68,6 +68,8 @@ class Competency(Base):
     activity = relationship("Activity", back_populates="competencies")
     module_links = relationship("ModuleCompetency", back_populates="competency")
     learner_scores = relationship("LearnerCompetencyScore", back_populates="competency")
+    topics = relationship("Topic", back_populates="competency", cascade="all, delete-orphan")
+    evidence = relationship("CompetencyEvidence", back_populates="competency", cascade="all, delete-orphan")
 
 
 class Learner(Base):
@@ -84,6 +86,15 @@ class Learner(Base):
     last_login_at = Column(DateTime, nullable=True)
     login_count = Column(Integer, default=0)
 
+    # Onboarding wizard state — set to True after the learner completes setup
+    onboarding_completed = Column(Boolean, default=False, nullable=False)
+    # Career development goal free-text (set during onboarding step 4)
+    career_goal = Column(Text, nullable=True)
+    # Target timeline in months for achieving role readiness
+    goal_timeline_months = Column(Integer, nullable=True)
+    # Preferred learning format (self-paced, guided, intensive)
+    learning_preference = Column(String, nullable=True)
+
     # Optional link to an OULAD synthetic "behavioral twin" used to seed
     # the ML-derived competency scores for this learner (see ml/README).
     oulad_student_id = Column(String, nullable=True)
@@ -96,6 +107,13 @@ class Learner(Base):
     scores = relationship("LearnerCompetencyScore", back_populates="learner", cascade="all, delete-orphan")
     quiz_attempts = relationship("QuizAttempt", back_populates="learner", cascade="all, delete-orphan")
     login_audits = relationship("LoginAudit", back_populates="learner", cascade="all, delete-orphan")
+    topic_mastery = relationship("LearnerTopicMastery", back_populates="learner", cascade="all, delete-orphan")
+    evidence = relationship("CompetencyEvidence", back_populates="learner", cascade="all, delete-orphan")
+    learning_path_steps = relationship("LearningPathStep", back_populates="learner", cascade="all, delete-orphan")
+    points = relationship("LearnerPoint", back_populates="learner", cascade="all, delete-orphan")
+    badges = relationship("LearnerBadge", back_populates="learner", cascade="all, delete-orphan")
+    notifications = relationship("Notification", back_populates="learner", cascade="all, delete-orphan")
+    certificates = relationship("Certificate", back_populates="learner", cascade="all, delete-orphan")
 
 
 class LoginAudit(Base):
@@ -137,7 +155,7 @@ class LearningModule(Base):
     description = Column(Text, nullable=True)
     duration_minutes = Column(Integer, default=60)
     level = Column(Integer, default=1)  # 1-5
-    source = Column(String, default="mock_igot")  # marks provenance honestly
+    source = Column(String, default="prototype_mock_catalog")  # marks provenance honestly
 
     competency_links = relationship("ModuleCompetency", back_populates="module")
 
@@ -161,6 +179,8 @@ class UploadedDocument(Base):
     extracted_text = Column(Text, nullable=True)
     uploaded_at = Column(DateTime, default=datetime.utcnow)
 
+    chunks = relationship("DocumentChunk", back_populates="document", cascade="all, delete-orphan")
+
 
 class Quiz(Base):
     __tablename__ = "quizzes"
@@ -168,7 +188,7 @@ class Quiz(Base):
     source_document_id = Column(String, ForeignKey("uploaded_documents.id"), nullable=True)
     module_id = Column(String, ForeignKey("learning_modules.id"), nullable=True)
     title = Column(String, nullable=False)
-    questions = Column(JSON, nullable=False)  # list of {question, options[4], correct_index, explanation, difficulty}
+    questions = Column(JSON, nullable=False)  # list of {question, options[4], correct_index, explanation, difficulty, source_chunk_ids, source_excerpt}
     competency_tags = Column(JSON, nullable=True)  # list of competency_id this quiz targets
     generated_by = Column(String, default="gemini")  # honesty field: which LLM actually generated it
     created_at = Column(DateTime, default=datetime.utcnow)
@@ -212,5 +232,203 @@ class CompetencyPrereq(Base):
 
     competency = relationship("Competency", foreign_keys=[competency_id])
     prereq_competency = relationship("Competency", foreign_keys=[prereq_competency_id])
+
+
+# --- Topic-Level Mastery ---
+class Topic(Base):
+    __tablename__ = "topics"
+    id = Column(String, primary_key=True, default=gen_id)
+    competency_id = Column(String, ForeignKey("competencies.id", ondelete="CASCADE"), nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    competency = relationship("Competency", back_populates="topics")
+    learner_mastery = relationship("LearnerTopicMastery", back_populates="topic", cascade="all, delete-orphan")
+
+
+class LearnerTopicMastery(Base):
+    __tablename__ = "learner_topic_mastery"
+    id = Column(String, primary_key=True, default=gen_id)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    topic_id = Column(String, ForeignKey("topics.id", ondelete="CASCADE"), nullable=False)
+    mastery_probability = Column(Float, default=0.3)
+    attempts = Column(Integer, default=0)
+    correct = Column(Integer, default=0)
+    confidence = Column(Float, default=0.5)
+    last_assessed = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    learner = relationship("Learner", back_populates="topic_mastery")
+    topic = relationship("Topic", back_populates="learner_mastery")
+
+
+# --- Competency Evidence Loop ---
+class CompetencyEvidence(Base):
+    __tablename__ = "competency_evidence"
+    id = Column(String, primary_key=True, default=gen_id)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    competency_id = Column(String, ForeignKey("competencies.id", ondelete="CASCADE"), nullable=False)
+    assessment_type = Column(String, nullable=False)  # MCQ, CAT, VIVA, PRACTICAL, REASSESSMENT
+    assessment_id = Column(String, nullable=True)
+    score = Column(Float, nullable=False)
+    mastery_probability = Column(Float, nullable=True)
+    confidence = Column(Float, nullable=True)
+    source = Column(String, default="skilllens_assessment")
+    timestamp = Column(DateTime, default=datetime.utcnow)
+    before_level = Column(Float, nullable=False)
+    after_level = Column(Float, nullable=False)
+    evidence_reference = Column(JSON, nullable=True)
+
+    learner = relationship("Learner", back_populates="evidence")
+    competency = relationship("Competency", back_populates="evidence")
+
+
+# --- True RAG Document Chunks ---
+class DocumentChunk(Base):
+    __tablename__ = "document_chunks"
+    id = Column(String, primary_key=True, default=gen_id)
+    document_id = Column(String, ForeignKey("uploaded_documents.id", ondelete="CASCADE"), nullable=False)
+    chunk_index = Column(Integer, nullable=False)
+    page_number = Column(Integer, default=1)
+    text = Column(Text, nullable=False)
+    section = Column(String, nullable=True)
+    heading = Column(String, nullable=True)
+    token_count = Column(Integer, default=0)
+    chunk_hash = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    document = relationship("UploadedDocument", back_populates="chunks")
+
+
+# --- Dynamic Learning Path ---
+class LearningPathStep(Base):
+    __tablename__ = "learning_path_steps"
+    id = Column(String, primary_key=True, default=gen_id)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    module_id = Column(String, ForeignKey("learning_modules.id", ondelete="CASCADE"), nullable=False)
+    competency_id = Column(String, ForeignKey("competencies.id", ondelete="CASCADE"), nullable=False)
+    order_index = Column(Integer, nullable=False)
+    status = Column(String, default="RECOMMENDED")  # LOCKED, RECOMMENDED, IN_PROGRESS, COMPLETED, REASSESS_REQUIRED, MASTERED
+    score = Column(Float, nullable=True)
+    completed_at = Column(DateTime, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    learner = relationship("Learner", back_populates="learning_path_steps")
+    module = relationship("LearningModule")
+    competency = relationship("Competency")
+
+
+# --- Syllabus Version Watcher ---
+class SyllabusVersion(Base):
+    __tablename__ = "syllabus_versions"
+    id = Column(String, primary_key=True, default=gen_id)
+    title = Column(String, nullable=False)
+    version = Column(String, nullable=False)
+    raw_text = Column(Text, nullable=True)
+    parsed_structure = Column(JSON, nullable=False)
+    diff_summary = Column(JSON, nullable=True)
+    uploaded_at = Column(DateTime, default=datetime.utcnow)
+
+
+# --- Question Version Control ---
+class QuestionVersion(Base):
+    __tablename__ = "question_versions"
+    id = Column(String, primary_key=True, default=gen_id)
+    question_id = Column(String, nullable=False, index=True)
+    quiz_id = Column(String, ForeignKey("quizzes.id", ondelete="SET NULL"), nullable=True)
+    version = Column(Integer, default=1)
+    status = Column(String, default="ACTIVE")  # ACTIVE, REVIEW, SUPERSEDED, ARCHIVED
+    question_data = Column(JSON, nullable=False)
+    source_document_id = Column(String, ForeignKey("uploaded_documents.id", ondelete="SET NULL"), nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    superseded_at = Column(DateTime, nullable=True)
+
+
+# --- Gamification: Points & Badges ---
+class LearnerPoint(Base):
+    __tablename__ = "learner_points"
+    id = Column(String, primary_key=True, default=gen_id)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    event_type = Column(String, nullable=False)
+    points = Column(Integer, nullable=False)
+    idempotent_key = Column(String, unique=True, nullable=False, index=True)
+    description = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    learner = relationship("Learner", back_populates="points")
+
+
+class Badge(Base):
+    __tablename__ = "badges"
+    id = Column(String, primary_key=True, default=gen_id)
+    code = Column(String, unique=True, nullable=False)
+    name = Column(String, nullable=False)
+    description = Column(String, nullable=False)
+    icon = Column(String, default="award")
+    min_points = Column(Integer, default=0)
+    criteria = Column(String, nullable=True)
+
+
+class LearnerBadge(Base):
+    __tablename__ = "learner_badges"
+    id = Column(String, primary_key=True, default=gen_id)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    badge_id = Column(String, ForeignKey("badges.id", ondelete="CASCADE"), nullable=False)
+    awarded_at = Column(DateTime, default=datetime.utcnow)
+    idempotent_key = Column(String, unique=True, nullable=False, index=True)
+
+    learner = relationship("Learner", back_populates="badges")
+    badge = relationship("Badge")
+
+
+# --- Passbook & Certificate Verification ---
+class Certificate(Base):
+    __tablename__ = "certificates"
+    id = Column(String, primary_key=True, default=gen_id)
+    verification_id = Column(String, unique=True, nullable=False, index=True)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    competency_id = Column(String, ForeignKey("competencies.id", ondelete="SET NULL"), nullable=True)
+    title = Column(String, nullable=False)  # SkillLens Achievement Certificate
+    achievement_name = Column(String, nullable=False)
+    issue_date = Column(DateTime, default=datetime.utcnow)
+    valid = Column(Boolean, default=True)
+    evidence_summary = Column(JSON, nullable=True)
+
+    learner = relationship("Learner", back_populates="certificates")
+    competency = relationship("Competency")
+
+
+# --- Notification Center ---
+class Notification(Base):
+    __tablename__ = "notifications"
+    id = Column(String, primary_key=True, default=gen_id)
+    learner_id = Column(String, ForeignKey("learners.id", ondelete="CASCADE"), nullable=False)
+    type = Column(String, nullable=False)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    read = Column(Boolean, default=False)
+    related_competency = Column(String, nullable=True)
+    related_module = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+    learner = relationship("Learner", back_populates="notifications")
+
+
+# --- Unified Audit Trail ---
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+    id = Column(String, primary_key=True, default=gen_id)
+    actor_id = Column(String, nullable=True)
+    actor_type = Column(String, default="learner")
+    event_type = Column(String, nullable=False)
+    entity_type = Column(String, nullable=True)
+    entity_id = Column(String, nullable=True)
+    old_value = Column(JSON, nullable=True)
+    new_value = Column(JSON, nullable=True)
+    ip = Column(String, nullable=True)
+    user_agent = Column(String, nullable=True)
+    timestamp = Column(DateTime, default=datetime.utcnow, index=True)
+
 
 

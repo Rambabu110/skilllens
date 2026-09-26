@@ -4,6 +4,7 @@ SAME code runs against local SQLite (dev/testing here) or Supabase
 Postgres (real deployment) with zero code changes.
 """
 import os
+from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
 
@@ -24,7 +25,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str | None = None
 
     # --- Auth ---
-    JWT_SECRET: str
+    JWT_SECRET: str = "skilllens-jwt-secret-key-production-change-me"
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 60 * 24  # 24h, fine for a demo
     ADMIN_EMAILS: list[str] = [
@@ -56,6 +57,20 @@ class Settings(BaseSettings):
         "http://127.0.0.1:8000",
     ]
 
+    @field_validator("CORS_ORIGINS", mode="before")
+    @classmethod
+    def parse_cors_origins(cls, v):
+        if isinstance(v, str):
+            v = v.strip()
+            if v.startswith("[") and v.endswith("]"):
+                import json
+                try:
+                    return json.loads(v)
+                except Exception:
+                    pass
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
+        return v
+
     class Config:
         env_file = ".env"
         env_file_encoding = "utf-8"
@@ -72,7 +87,5 @@ def is_admin_email(email: str | None) -> bool:
     if not email:
         return False
     normalized = email.strip().lower()
-    if normalized in [e.lower() for e in settings.ADMIN_EMAILS]:
-        return True
-    local_part = normalized.split("@")[0]
-    return "admin" in local_part
+    return normalized in [e.lower() for e in settings.ADMIN_EMAILS]
+

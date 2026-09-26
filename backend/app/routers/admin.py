@@ -314,3 +314,114 @@ def bootstrap_admin(
         return {"status": "success", "message": f"{current.email} is now an Administrator", "is_admin": True}
 
     raise HTTPException(status_code=403, detail="Not eligible for automatic admin bootstrap")
+
+
+# --- Comprehensive Audit Trail Stream ---
+@router.get("/audit-events")
+def get_audit_events(
+    event_type: Optional[str] = None,
+    limit: int = 100,
+    admin: Learner = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Real-time immutable security and operational audit event stream."""
+    from app.services.audit_service import get_audit_events_stream
+    events = get_audit_events_stream(db, event_type=event_type, limit=limit)
+    return [
+        {
+            "id": e.id,
+            "actor_id": e.actor_id,
+            "actor_type": e.actor_type,
+            "event_type": e.event_type,
+            "entity_type": e.entity_type,
+            "entity_id": e.entity_id,
+            "old_value": e.old_value,
+            "new_value": e.new_value,
+            "ip": e.ip,
+            "user_agent": e.user_agent,
+            "timestamp": e.timestamp.isoformat() if e.timestamp else None,
+        }
+        for e in events
+    ]
+
+
+# --- Syllabus & Assessment Pattern Watch ---
+class SyllabusCompareRequest(BaseModel):
+    v1_title: str
+    v1_text: str
+    v2_title: str
+    v2_text: str
+
+
+@router.post("/syllabus/compare")
+def compare_syllabus(
+    payload: SyllabusCompareRequest,
+    admin: Learner = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """
+    Syllabus & Assessment Pattern Watch — Prototype
+    Ingests Syllabus v1 and v2, calculates ADDED/REMOVED/MODIFIED/UNCHANGED topics,
+    and flags affected assessment questions for review.
+    """
+    from app.services.syllabus_service import ingest_and_compare_syllabus
+    result = ingest_and_compare_syllabus(
+        db=db,
+        v1_title=payload.v1_title,
+        v1_text=payload.v1_text,
+        v2_title=payload.v2_title,
+        v2_text=payload.v2_text,
+    )
+    return result
+
+
+# --- Question Version Control & Review ---
+@router.get("/questions/versions")
+def list_question_versions(
+    status: Optional[str] = None,
+    limit: int = 50,
+    admin: Learner = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Lists question versions in the assessment item bank (ACTIVE, REVIEW, ARCHIVED)."""
+    from app.services.question_version_service import get_question_versions_by_status
+    versions = get_question_versions_by_status(db, status=status, limit=limit)
+    return [
+        {
+            "id": v.id,
+            "question_id": v.question_id,
+            "quiz_id": v.quiz_id,
+            "version": v.version,
+            "status": v.status,
+            "question_data": v.question_data,
+            "source_document_id": v.source_document_id,
+            "created_at": v.created_at.isoformat() if v.created_at else None,
+            "superseded_at": v.superseded_at.isoformat() if v.superseded_at else None,
+        }
+        for v in versions
+    ]
+
+
+class UpdateQuestionStatusPayload(BaseModel):
+    status: str
+
+
+@router.post("/questions/versions/{version_id}/status")
+def change_question_version_status(
+    version_id: str,
+    payload: UpdateQuestionStatusPayload,
+    admin: Learner = Depends(get_current_admin),
+    db: Session = Depends(get_db),
+):
+    """Updates a question version's status (e.g. approve from REVIEW to ACTIVE, or ARCHIVE)."""
+    from app.services.question_version_service import update_question_version_status
+    try:
+        updated = update_question_version_status(db, version_id, payload.status)
+        return {
+            "id": updated.id,
+            "status": updated.status,
+            "version": updated.version,
+        }
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+

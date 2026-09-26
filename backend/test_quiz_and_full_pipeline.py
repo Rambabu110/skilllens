@@ -1,9 +1,37 @@
+"""
+test_quiz_and_full_pipeline.py — Live integration test for Quiz generation pipeline.
+Requires a running backend at http://127.0.0.1:8000.
+Run the backend first: uvicorn app.main:app --reload --port 8000
+"""
 import requests
 import io
+import sys
+
+if hasattr(sys.stdout, "reconfigure"):
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
 
 BASE = "http://127.0.0.1:8000"
 
+SKIP_MSG = (
+    "\n⚠  Backend server not running at http://127.0.0.1:8000\n"
+    "   Start it with: cd skilllens/backend && uvicorn app.main:app --reload --port 8000\n"
+    "   Then re-run this script.\n"
+)
+
+
+def check_server():
+    try:
+        r = requests.get(f"{BASE}/", timeout=3)
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
 def run_tests():
+    if not check_server():
+        print(SKIP_MSG)
+        sys.exit(0)   # Exit 0 = not a failure, server just isn't up
+
     print("--- 1. Testing System & Login ---")
     r = requests.post(f"{BASE}/auth/login", json={"email": "aditi.demo@skilllens.in", "password": "demo1234"})
     assert r.status_code == 200, f"Login failed: {r.text}"
@@ -30,39 +58,57 @@ def run_tests():
     assert r.status_code == 200, f"Module Quiz generate failed ({r.status_code}): {r.text}"
     quiz_data = r.json()
     assert "questions" in quiz_data and len(quiz_data["questions"]) > 0, "No questions returned"
-    print(f"[OK] Generated {len(quiz_data['questions'])} questions for module. Title: '{quiz_data.get('title')}'")
+    print(f"[OK] Generated {len(quiz_data['questions'])} questions. Title: '{quiz_data.get('title')}'")
     print(f"  Sample Q1: {quiz_data['questions'][0]['question']}")
 
     print("\n--- 4. Testing Quiz Submission ---")
     quiz_id = quiz_data["id"]
     answers = [0] * len(quiz_data["questions"])
-    sub_payload = {
-        "quiz_id": quiz_id,
-        "answers": answers
-    }
+    sub_payload = {"quiz_id": quiz_id, "answers": answers}
     r = requests.post(f"{BASE}/quiz/submit", json=sub_payload, headers=headers)
     assert r.status_code == 200, f"Quiz submit failed: {r.text}"
     res = r.json()
-    print(f"[OK] Quiz submitted successfully. Score: {res['score']}%, Breakdown items: {len(res['breakdown'])}")
+    print(f"[OK] Quiz submitted. Score: {res['score']}%, Breakdown items: {len(res['breakdown'])}")
 
-    print("\n--- 5. Testing PDF Document Upload (Basic_English_Grammar_Book_1.pdf) ---")
-    with open("../Basic_English_Grammar_Book_1.pdf", "rb") as f:
-        pdf_bytes = f.read()
-    
-    files = {"file": ("Basic_English_Grammar_Book_1.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
+    print("\n--- 5. Testing Searchable PDF Document Upload ---")
+    from reportlab.lib.pagesizes import letter
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer
+    from reportlab.lib.styles import getSampleStyleSheet
+
+    buf = io.BytesIO()
+    doc_pdf = SimpleDocTemplate(buf, pagesize=letter)
+    styles = getSampleStyleSheet()
+    story = [
+        Paragraph("Official Statistical Survey and Sampling Protocols", styles["Title"]),
+        Spacer(1, 12),
+        Paragraph(
+            "Stratified random sampling is widely employed in official socio-economic surveys. "
+            "In stratified sampling, the entire population is divided into mutually exclusive, "
+            "homogeneous subgroups known as strata. Independent probability samples are drawn "
+            "from each stratum to ensure adequate precision across rural and urban sectors.",
+            styles["Normal"]
+        ),
+        Spacer(1, 12),
+        Paragraph(
+            "Proportional allocation assigns sample size to each stratum in proportion to "
+            "stratum population weight. Neyman allocation incorporates stratum variance to "
+            "minimize aggregate sampling error under fixed cost constraints.",
+            styles["Normal"]
+        ),
+    ]
+    doc_pdf.build(story)
+    pdf_bytes = buf.getvalue()
+
+    files = {"file": ("Official_Sampling_Protocols.pdf", io.BytesIO(pdf_bytes), "application/pdf")}
     r = requests.post(f"{BASE}/quiz/upload", files=files, headers=headers)
     assert r.status_code == 200, f"Upload failed: {r.text}"
     up_data = r.json()
     doc_id = up_data["document_id"]
     chars = up_data["chars_extracted"]
-    print(f"[OK] PDF uploaded successfully. Doc ID: {doc_id}, Extracted chars: {chars}")
+    print(f"[OK] PDF uploaded. Doc ID: {doc_id}, Extracted chars: {chars}")
 
     print("\n--- 6. Testing Quiz Generation from Uploaded PDF Document ---")
-    doc_payload = {
-        "document_id": doc_id,
-        "num_questions": 3,
-        "language": "en"
-    }
+    doc_payload = {"document_id": doc_id, "num_questions": 3, "language": "en"}
     r = requests.post(f"{BASE}/quiz/generate", json=doc_payload, headers=headers, timeout=90)
     assert r.status_code == 200, f"PDF Quiz generate failed ({r.status_code}): {r.text}"
     pdf_quiz = r.json()
@@ -73,6 +119,7 @@ def run_tests():
     print("\n========================================================")
     print(">>> ALL PIPELINE & QUIZ GENERATION TESTS PASSED 100%! <<<")
     print("========================================================")
+
 
 if __name__ == "__main__":
     run_tests()

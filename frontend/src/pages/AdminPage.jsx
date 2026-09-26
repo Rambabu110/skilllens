@@ -20,7 +20,15 @@ import {
   X,
   Award,
   Mail,
+  GitCompare,
+  HelpCircle,
+  History,
+  FileText,
+  Check,
+  ArrowRight,
 } from "lucide-react";
+
+import StatsCounter from "../components/ui/stats-counter";
 
 function formatRelativeTime(dateString) {
   if (!dateString) return "Never";
@@ -50,7 +58,7 @@ function parseUserAgent(ua) {
 }
 
 export default function AdminPage() {
-  const { token, learner } = useAuth();
+  const { token } = useAuth();
   const { openAuthModal } = useAuthModal();
   const isGuest = !token;
 
@@ -79,6 +87,28 @@ export default function AdminPage() {
   const [dossier, setDossier] = useState(null);
   const [dossierLoading, setDossierLoading] = useState(false);
   const [roleUpdating, setRoleUpdating] = useState(false);
+
+  // Syllabus Pattern Watcher state
+  const [v1Title, setV1Title] = useState("National Statistical Survey Guidelines (78th Round)");
+  const [v1Text, setV1Text] = useState(
+    "Unit 1: Simple Random Sampling and Stratification.\nUnit 2: Paper-based Field Schedules & In-person Consent.\nUnit 3: Household Income Aggregation Rules."
+  );
+  const [v2Title, setV2Title] = useState("National Statistical Survey Guidelines (79th Round Digital Edition)");
+  const [v2Text, setV2Text] = useState(
+    "Unit 1: Simple Random Sampling and Stratification.\nUnit 2: GPS-Enabled CAPI Digital Tablet Schedules & Biometric Consent.\nUnit 3: Household Income Aggregation Rules.\nUnit 4: Real-time Geo-fencing & Non-Response Verification."
+  );
+  const [syllabusResult, setSyllabusResult] = useState(null);
+  const [syllabusLoading, setSyllabusLoading] = useState(false);
+
+  // Question Item Bank state
+  const [questionVersions, setQuestionVersions] = useState([]);
+  const [questionFilter, setQuestionFilter] = useState("ALL");
+  const [questionsLoading, setQuestionsLoading] = useState(false);
+
+  // Audit Events state
+  const [auditEvents, setAuditEvents] = useState([]);
+  const [auditLoading, setAuditLoading] = useState(false);
+
 
   const isFirstLoad = useRef(true);
 
@@ -201,6 +231,71 @@ export default function AdminPage() {
     }
   };
 
+  const fetchQuestions = useCallback(async () => {
+    if (!token) return;
+    setQuestionsLoading(true);
+    try {
+      const res = await client.get("/admin/questions/versions", {
+        params: { status: questionFilter === "ALL" ? undefined : questionFilter },
+      });
+      setQuestionVersions(res.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setQuestionsLoading(false);
+    }
+  }, [token, questionFilter]);
+
+  const fetchAuditEvents = useCallback(async () => {
+    if (!token) return;
+    setAuditLoading(true);
+    try {
+      const res = await client.get("/admin/audit-events", { params: { limit: 100 } });
+      setAuditEvents(res.data || []);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setAuditLoading(false);
+    }
+  }, [token]);
+
+  async function handleCompareSyllabus() {
+    setSyllabusLoading(true);
+    try {
+      const res = await client.post("/admin/syllabus/compare", {
+        v1_title: v1Title,
+        v1_text: v1Text,
+        v2_title: v2Title,
+        v2_text: v2Text,
+      });
+      setSyllabusResult(res.data);
+    } catch (err) {
+      console.error("Syllabus comparison failed", err);
+    } finally {
+      setSyllabusLoading(false);
+    }
+  }
+
+  async function handleUpdateQuestionStatus(versionId, newStatus) {
+    try {
+      await client.post(`/admin/questions/versions/${versionId}/status`, { status: newStatus });
+      setQuestionVersions((prev) =>
+        prev.map((q) => (q.id === versionId ? { ...q, status: newStatus } : q))
+      );
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  useEffect(() => {
+    if (activeTab === "questions") {
+      fetchQuestions();
+    } else if (activeTab === "audit") {
+      fetchAuditEvents();
+    }
+  }, [activeTab, fetchQuestions, fetchAuditEvents]);
+
+
   if (isGuest) {
     return (
       <div className="space-y-8 pb-12">
@@ -208,7 +303,7 @@ export default function AdminPage() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="font-display font-extrabold text-2xl md:text-3xl text-white tracking-tight">
+              <h1 className="font-urbanist font-extrabold text-2xl md:text-3xl text-white tracking-tight">
                 Admin Command Center
               </h1>
               <span className="px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/20 text-[10px] font-bold uppercase tracking-wider">
@@ -303,30 +398,30 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="space-y-7 pb-16">
+    <div className="space-y-8 pb-16">
       {/* Top Header & Supabase Live Status Ribbon */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 border-b border-white/10 pb-6">
         <div>
-          <div className="flex items-center gap-2.5">
-            <h1 className="font-display font-black text-2xl md:text-3xl text-white tracking-tight">
+          <div className="flex items-center gap-3">
+            <h1 className="font-urbanist font-extrabold text-2xl md:text-3xl text-white tracking-tight">
               Executive Cadre Administration
             </h1>
-            <span className="px-2.5 py-0.5 rounded-md bg-teal-400/10 text-teal-300 border border-teal-400/20 text-[10px] font-bold uppercase tracking-wider">
+            <span className="px-3 py-1 rounded-full bg-[#A068FF]/15 text-[#C084FC] border border-[#A068FF]/30 text-xs font-bold uppercase tracking-wider font-mono">
               Control Panel
             </span>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
             Real-time synchronization with Supabase PostgreSQL · Session activity audits, A-to-Z student dossiers & cadre governance.
           </p>
         </div>
 
         {/* Live Status & Controls */}
-        <div className="flex items-center flex-wrap gap-2.5">
+        <div className="flex items-center flex-wrap gap-3">
           {/* Supabase Connection Pill */}
-          <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-xs font-medium">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#A068FF]/15 border border-[#A068FF]/30 text-[#C084FC] text-xs font-semibold">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#A068FF] opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-[#A068FF]" />
             </span>
             <span>Supabase DB · Live</span>
           </div>
@@ -335,10 +430,10 @@ export default function AdminPage() {
           <button
             type="button"
             onClick={() => setAutoRefresh(!autoRefresh)}
-            className={`px-3 py-1.5 rounded-xl border text-xs font-semibold transition-all ${
+            className={`px-3.5 py-1.5 rounded-xl border text-xs font-bold transition-all ${
               autoRefresh
-                ? "bg-teal-500/15 border-teal-400/30 text-teal-300"
-                : "bg-slate-900 border-white/10 text-slate-400 hover:text-white"
+                ? "bg-[#A068FF]/20 border-[#A068FF]/40 text-[#C084FC] shadow-[0_0_10px_rgba(160,104,255,0.2)]"
+                : "bg-white/[0.03] border-white/10 text-slate-400 hover:text-white"
             }`}
           >
             Auto-Sync: {autoRefresh ? "ON (10s)" : "OFF"}
@@ -349,14 +444,14 @@ export default function AdminPage() {
             type="button"
             disabled={refreshing}
             onClick={() => fetchAllData(true)}
-            className="p-2 rounded-xl bg-slate-900/80 border border-white/10 hover:bg-slate-800 text-slate-300 hover:text-white transition-all disabled:opacity-50"
+            className="p-2.5 rounded-xl bg-white/[0.03] border border-white/10 hover:border-[#A068FF]/50 text-slate-300 hover:text-white transition-all disabled:opacity-50"
             title="Refresh now from Supabase"
           >
-            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-teal-400" : ""}`} />
+            <RefreshCw className={`w-4 h-4 ${refreshing ? "animate-spin text-[#A068FF]" : ""}`} />
           </button>
 
           {lastSyncTime && (
-            <span className="text-[11px] text-slate-500 hidden xl:inline">
+            <span className="text-xs text-slate-400 font-mono hidden xl:inline">
               Updated {formatRelativeTime(lastSyncTime)}
             </span>
           )}
@@ -365,81 +460,81 @@ export default function AdminPage() {
 
       {/* KPI Metrics Strip */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 rounded-2xl glass-panel relative overflow-hidden border border-white/[0.08]">
+        <div className="p-5 sm:p-6 sovereign-card rounded-2xl border border-white/10 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-urbanist">
               Enrolled Students
             </p>
-            <div className="w-8 h-8 rounded-lg bg-teal-400/10 border border-teal-400/20 flex items-center justify-center text-teal-300">
+            <div className="w-9 h-9 rounded-xl bg-[#A068FF]/15 border border-[#A068FF]/30 flex items-center justify-center text-[#A068FF]">
               <Users className="w-4 h-4" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-display font-extrabold text-white tracking-tight">
-            {stats?.total_learners ?? 0}
+          <p className="mt-3 text-3xl sm:text-4xl font-urbanist font-extrabold text-white tracking-tight">
+            <StatsCounter value={stats?.total_learners ?? 0} decimals={0} duration={1.2} />
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">A-to-Z cadre directory</p>
+          <p className="text-xs text-slate-400 mt-1">A-to-Z cadre directory</p>
         </div>
 
-        <div className="p-5 rounded-2xl glass-panel relative overflow-hidden border border-white/[0.08]">
+        <div className="p-5 sm:p-6 sovereign-card rounded-2xl border border-white/10 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-urbanist">
               Login Sessions Tracked
             </p>
-            <div className="w-8 h-8 rounded-lg bg-indigo-500/10 border border-indigo-500/20 flex items-center justify-center text-indigo-400">
+            <div className="w-9 h-9 rounded-xl bg-sky-500/15 border border-sky-500/30 flex items-center justify-center text-sky-400">
               <LogIn className="w-4 h-4" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-display font-extrabold text-indigo-300 tracking-tight">
-            {stats?.total_logins ?? 0}
+          <p className="mt-3 text-3xl sm:text-4xl font-urbanist font-extrabold text-sky-300 tracking-tight">
+            <StatsCounter value={stats?.total_logins ?? 0} decimals={0} duration={1.2} />
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">Audited in Supabase DB</p>
+          <p className="text-xs text-slate-400 mt-1">Audited in Supabase DB</p>
         </div>
 
-        <div className="p-5 rounded-2xl glass-panel relative overflow-hidden border border-white/[0.08]">
+        <div className="p-5 sm:p-6 sovereign-card rounded-2xl border border-white/10 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-urbanist">
               Active Officers Today
             </p>
-            <div className="w-8 h-8 rounded-lg bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-emerald-400">
+            <div className="w-9 h-9 rounded-xl bg-[#A068FF]/15 border border-[#A068FF]/30 flex items-center justify-center text-[#A068FF]">
               <Activity className="w-4 h-4" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-display font-extrabold text-emerald-400 tracking-tight">
-            {stats?.active_today ?? 0}
+          <p className="mt-3 text-3xl sm:text-4xl font-urbanist font-extrabold text-[#C084FC] tracking-tight">
+            <StatsCounter value={stats?.active_today ?? 0} decimals={0} duration={1.2} />
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">Signed in past 24 hours</p>
+          <p className="text-xs text-slate-400 mt-1">Signed in past 24 hours</p>
         </div>
 
-        <div className="p-5 rounded-2xl glass-panel relative overflow-hidden border border-white/[0.08]">
+        <div className="p-5 sm:p-6 sovereign-card rounded-2xl border border-white/10 shadow-xl relative overflow-hidden">
           <div className="flex items-center justify-between">
-            <p className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
+            <p className="text-xs font-bold uppercase tracking-wider text-slate-400 font-urbanist">
               Critical Deficits
             </p>
-            <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-rose-400">
+            <div className="w-9 h-9 rounded-xl bg-rose-500/15 border border-rose-500/30 flex items-center justify-center text-rose-400">
               <AlertTriangle className="w-4 h-4" />
             </div>
           </div>
-          <p className="mt-3 text-3xl font-display font-extrabold text-rose-400 tracking-tight">
-            {stats?.total_critical_gaps ?? 0}
+          <p className="mt-3 text-3xl sm:text-4xl font-urbanist font-extrabold text-rose-400 tracking-tight">
+            <StatsCounter value={stats?.total_critical_gaps ?? 0} decimals={0} duration={1.2} />
           </p>
-          <p className="text-[11px] text-slate-400 mt-1">Capacity gaps &ge; 2.0</p>
+          <p className="text-xs text-slate-400 mt-1">Capacity gaps &ge; 2.0</p>
         </div>
       </div>
 
       {/* Tabs Navigation */}
-      <div className="flex overflow-x-auto no-scrollbar rounded-2xl bg-slate-900/80 p-1.5 border border-white/[0.08] w-full max-w-2xl">
+      <div className="flex overflow-x-auto no-scrollbar rounded-2xl bg-white/[0.025] p-1.5 border border-white/10 w-full max-w-4xl gap-1.5">
         <button
           type="button"
           onClick={() => setActiveTab("learners")}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 sm:shrink ${
+          className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
             activeTab === "learners"
-              ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
+              ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white shadow-[0_0_15px_rgba(160,104,255,0.4)]"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <Users className="w-3.5 h-3.5" />
-          <span>Students Directory (A-Z)</span>
-          <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/20 font-mono">
+          <span>Students Directory</span>
+          <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 font-mono">
             {learners.length}
           </span>
         </button>
@@ -447,15 +542,15 @@ export default function AdminPage() {
         <button
           type="button"
           onClick={() => setActiveTab("logins")}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 sm:shrink ${
+          className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
             activeTab === "logins"
-              ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
+              ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white shadow-[0_0_15px_rgba(160,104,255,0.4)]"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
           <span>Who Logged In</span>
-          <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-slate-950/20 font-mono">
+          <span className="ml-1 text-[10px] px-1.5 py-0.2 rounded-full bg-white/10 font-mono">
             {loginAudits.length}
           </span>
         </button>
@@ -463,16 +558,56 @@ export default function AdminPage() {
         <button
           type="button"
           onClick={() => setActiveTab("cohort")}
-          className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 sm:shrink ${
+          className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
             activeTab === "cohort"
-              ? "bg-teal-400 text-slate-950 shadow-md shadow-teal-500/20"
+              ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white shadow-[0_0_15px_rgba(160,104,255,0.4)]"
               : "text-slate-400 hover:text-white"
           }`}
         >
           <Building2 className="w-3.5 h-3.5" />
-          <span>Cadre Deficit Heatmap</span>
+          <span>Cadre Heatmap</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("syllabus")}
+          className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
+            activeTab === "syllabus"
+              ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white shadow-[0_0_15px_rgba(160,104,255,0.4)]"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <GitCompare className="w-3.5 h-3.5" />
+          <span>Syllabus Watcher</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("questions")}
+          className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
+            activeTab === "questions"
+              ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white shadow-[0_0_15px_rgba(160,104,255,0.4)]"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <HelpCircle className="w-3.5 h-3.5" />
+          <span>Item Bank</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setActiveTab("audit")}
+          className={`py-2 px-3.5 text-xs font-bold rounded-xl transition-all flex items-center justify-center gap-2 whitespace-nowrap shrink-0 ${
+            activeTab === "audit"
+              ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white shadow-[0_0_15px_rgba(160,104,255,0.4)]"
+              : "text-slate-400 hover:text-white"
+          }`}
+        >
+          <History className="w-3.5 h-3.5" />
+          <span>Security Audit Trail</span>
         </button>
       </div>
+
 
       {/* TAB 1: LEARNERS & STUDENTS DIRECTORY (A TO Z) */}
       {activeTab === "learners" && (
@@ -875,6 +1010,452 @@ export default function AdminPage() {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: SYLLABUS PATTERN WATCHER */}
+      {activeTab === "syllabus" && (
+        <div className="space-y-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+            <div>
+              <h3 className="font-urbanist font-bold text-xl text-white flex items-center gap-2">
+                <GitCompare className="w-5 h-5 text-[#A068FF]" />
+                <span>Syllabus & Assessment Pattern Watcher</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Ingest curriculum editions and calculate set differentials. Outdated test items are automatically quarantined.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setV1Title("NSS Survey Guidelines (78th Round)");
+                setV1Text(
+                  "Unit 1: Stratified Random Sampling and Frame Construction.\nUnit 2: Paper-based Field Schedules & In-person Consent.\nUnit 3: Household Consumption Expenditure Imputation Rules."
+                );
+                setV2Title("NSS Survey Guidelines (79th Round Digital Edition)");
+                setV2Text(
+                  "Unit 1: Stratified Random Sampling and Frame Construction.\nUnit 2: GPS-Enabled CAPI Digital Tablet Schedules & Geo-tagging.\nUnit 3: Household Consumption Expenditure Imputation Rules.\nUnit 4: Real-time Cloud Telemetry & Non-Response Verification."
+                );
+              }}
+              className="px-3 py-1.5 rounded-xl bg-slate-900 border border-white/10 hover:border-teal-400/40 text-slate-300 hover:text-white text-xs font-semibold transition-all"
+            >
+              Load MoSPI Sample Revisions
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+            {/* Version 1 */}
+            <div className="rounded-2xl glass-panel p-5 border border-white/[0.08] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-slate-400">
+                  Curriculum Version A (Baseline)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400">
+                  Historical v1
+                </span>
+              </div>
+              <input
+                type="text"
+                value={v1Title}
+                onChange={(e) => setV1Title(e.target.value)}
+                className="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-teal-400"
+                placeholder="Version 1 Title..."
+              />
+              <textarea
+                rows={5}
+                value={v1Text}
+                onChange={(e) => setV1Text(e.target.value)}
+                className="w-full bg-slate-900/90 border border-white/10 rounded-xl p-3 text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-teal-400 resize-none"
+                placeholder="Paste baseline syllabus text..."
+              />
+            </div>
+
+            {/* Version 2 */}
+            <div className="rounded-2xl glass-panel p-5 border border-white/[0.08] space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold uppercase tracking-wider text-teal-400">
+                  Curriculum Version B (New Release)
+                </span>
+                <span className="px-2 py-0.5 rounded bg-teal-500/15 border border-teal-500/30 text-[10px] font-mono text-teal-300">
+                  Revised v2
+                </span>
+              </div>
+              <input
+                type="text"
+                value={v2Title}
+                onChange={(e) => setV2Title(e.target.value)}
+                className="w-full bg-slate-900/90 border border-white/10 rounded-xl px-3 py-2 text-xs font-semibold text-white focus:outline-none focus:border-teal-400"
+                placeholder="Version 2 Title..."
+              />
+              <textarea
+                rows={5}
+                value={v2Text}
+                onChange={(e) => setV2Text(e.target.value)}
+                className="w-full bg-slate-900/90 border border-white/10 rounded-xl p-3 text-xs text-slate-200 font-mono leading-relaxed focus:outline-none focus:border-teal-400 resize-none"
+                placeholder="Paste new syllabus text..."
+              />
+            </div>
+          </div>
+
+          <div className="flex justify-end">
+            <button
+              type="button"
+              disabled={syllabusLoading}
+              onClick={handleCompareSyllabus}
+              className="btn-primary text-xs py-2.5 px-5 gap-2"
+            >
+              {syllabusLoading ? (
+                <>
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                  <span>Analyzing Differentials…</span>
+                </>
+              ) : (
+                <>
+                  <GitCompare className="w-4 h-4" />
+                  <span>Execute Differential Pattern Analysis</span>
+                </>
+              )}
+            </button>
+          </div>
+
+          {/* Differential Results */}
+          {syllabusResult && (
+            <div className="rounded-2xl glass-panel p-6 border border-white/[0.08] space-y-5 animate-in fade-in slide-in-from-bottom-2 duration-200">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-white/[0.06] pb-4">
+                <div>
+                  <h4 className="font-bold text-sm text-white">
+                    Differential Analysis: {syllabusResult.v1_title} → {syllabusResult.v2_title}
+                  </h4>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Curriculum Version: v{syllabusResult.version}
+                  </p>
+                </div>
+                {syllabusResult.review_action_recommended && (
+                  <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-bold">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                    {syllabusResult.affected_questions_count} Assessment Items Quarantined for Review
+                  </span>
+                )}
+              </div>
+
+              {/* 4 Cards: Added, Removed, Modified, Unchanged */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase text-emerald-400">Added Topics</span>
+                    <span className="font-mono text-xs font-bold text-emerald-300">
+                      {syllabusResult.differential_summary.added.length}
+                    </span>
+                  </div>
+                  {syllabusResult.differential_summary.added.length === 0 ? (
+                    <p className="text-[11px] text-slate-500 italic">None</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {syllabusResult.differential_summary.added.map((t, idx) => (
+                        <li key={idx} className="text-xs text-emerald-200 font-medium flex items-center gap-1.5">
+                          <Check className="w-3 h-3 text-emerald-400 shrink-0" />
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-xl bg-rose-500/10 border border-rose-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase text-rose-400">Removed Topics</span>
+                    <span className="font-mono text-xs font-bold text-rose-300">
+                      {syllabusResult.differential_summary.removed.length}
+                    </span>
+                  </div>
+                  {syllabusResult.differential_summary.removed.length === 0 ? (
+                    <p className="text-[11px] text-slate-500 italic">None</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {syllabusResult.differential_summary.removed.map((t, idx) => (
+                        <li key={idx} className="text-xs text-rose-200 font-medium flex items-center gap-1.5">
+                          <X className="w-3 h-3 text-rose-400 shrink-0" />
+                          <span>{t}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase text-amber-400">Modified Topics</span>
+                    <span className="font-mono text-xs font-bold text-amber-300">
+                      {syllabusResult.differential_summary.modified.length}
+                    </span>
+                  </div>
+                  {syllabusResult.differential_summary.modified.length === 0 ? (
+                    <p className="text-[11px] text-slate-500 italic">None</p>
+                  ) : (
+                    <ul className="space-y-1">
+                      {syllabusResult.differential_summary.modified.map((t, idx) => (
+                        <li key={idx} className="text-xs text-amber-200 font-medium">
+                          {t}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+
+                <div className="p-4 rounded-xl bg-slate-800/60 border border-white/10 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase text-slate-400">Unchanged Topics</span>
+                    <span className="font-mono text-xs font-bold text-slate-300">
+                      {syllabusResult.differential_summary.unchanged.length}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    {syllabusResult.differential_summary.unchanged.length} topics retained unchanged.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 5: QUESTION ITEM BANK & VERSIONING */}
+      {activeTab === "questions" && (
+        <div className="space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+            <div>
+              <h3 className="font-urbanist font-bold text-xl text-white flex items-center gap-2">
+                <HelpCircle className="w-5 h-5 text-indigo-400" />
+                <span>Assessment Item Bank & Version Lifecycle</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Every RAG-grounded item versioned and managed across ACTIVE, REVIEW and ARCHIVED states.
+              </p>
+            </div>
+
+            {/* Filter Pills */}
+            <div className="flex items-center gap-1.5 bg-slate-900/90 p-1 rounded-xl border border-white/10">
+              {["ALL", "ACTIVE", "REVIEW", "ARCHIVED"].map((f) => (
+                <button
+                  key={f}
+                  type="button"
+                  onClick={() => setQuestionFilter(f)}
+                  className={`px-3 py-1 rounded-lg text-xs font-semibold transition-all ${
+                    questionFilter === f
+                      ? "bg-teal-400 text-slate-950 shadow-sm"
+                      : "text-slate-400 hover:text-white"
+                  }`}
+                >
+                  {f}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {questionsLoading ? (
+            <div className="py-16 text-center space-y-3">
+              <div className="w-8 h-8 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin mx-auto" />
+              <p className="text-xs text-slate-400">Loading item bank versions…</p>
+            </div>
+          ) : questionVersions.length === 0 ? (
+            <div className="rounded-2xl glass-panel p-12 text-center border border-white/[0.08] space-y-2">
+              <p className="text-sm font-semibold text-white">No question items found.</p>
+              <p className="text-xs text-slate-400">
+                Upload manuals in the AI Skills Assessment tab to generate and register RAG items.
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-3">
+              {questionVersions.map((q) => {
+                const data = q.question_data || {};
+                return (
+                  <div
+                    key={q.id}
+                    className="p-4 rounded-2xl glass-panel border border-white/[0.08] hover:border-white/15 transition-all space-y-3"
+                  >
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-bold">
+                          v{q.version}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-mono">
+                          ID: {q.question_id ? q.question_id.slice(0, 16) : q.id.slice(0, 8)}
+                        </span>
+                        {q.status === "ACTIVE" && (
+                          <span className="px-2 py-0.5 rounded-full bg-emerald-500/15 border border-emerald-500/30 text-emerald-300 text-[10px] font-bold">
+                            ACTIVE
+                          </span>
+                        )}
+                        {q.status === "REVIEW" && (
+                          <span className="px-2 py-0.5 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-[10px] font-bold animate-pulse">
+                            UNDER REVIEW
+                          </span>
+                        )}
+                        {q.status === "ARCHIVED" && (
+                          <span className="px-2 py-0.5 rounded-full bg-slate-800 text-slate-400 text-[10px] font-bold">
+                            ARCHIVED
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {q.status === "REVIEW" && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuestionStatus(q.id, "ACTIVE")}
+                            className="px-2.5 py-1 rounded-lg bg-teal-400 text-slate-950 text-[11px] font-bold hover:brightness-110 transition-all flex items-center gap-1"
+                          >
+                            <Check className="w-3 h-3" />
+                            <span>Approve Active</span>
+                          </button>
+                        )}
+                        {q.status === "ACTIVE" && (
+                          <button
+                            type="button"
+                            onClick={() => handleUpdateQuestionStatus(q.id, "ARCHIVED")}
+                            className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-medium transition-all"
+                          >
+                            Archive
+                          </button>
+                        )}
+                      </div>
+                    </div>
+
+                    <p className="text-xs font-semibold text-white leading-relaxed">
+                      {data.question || "Assessment item"}
+                    </p>
+
+                    {data.options && (
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1">
+                        {data.options.map((opt, i) => (
+                          <div
+                            key={i}
+                            className={`p-2 rounded-lg text-[11px] border ${
+                              i === data.correct_index
+                                ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-300 font-medium"
+                                : "bg-slate-900/50 border-white/[0.05] text-slate-400"
+                            }`}
+                          >
+                            <span className="font-mono font-bold mr-1.5">
+                              {String.fromCharCode(65 + i)}.
+                            </span>
+                            {opt}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {data.source_excerpt && (
+                      <div className="p-2.5 rounded-xl bg-slate-900/80 border border-white/[0.05] text-[11px] text-slate-400 flex items-start gap-2">
+                        <FileText className="w-3.5 h-3.5 text-teal-400 shrink-0 mt-0.5" />
+                        <div className="leading-snug">
+                          <span className="text-teal-300 font-medium">Source Evidence: </span>
+                          "{data.source_excerpt}"
+                          {data.page_number && (
+                            <span className="ml-1 text-slate-500 font-mono">
+                              (Page {data.page_number}, {data.document_name})
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* TAB 6: SECURITY AUDIT TRAIL */}
+      {activeTab === "audit" && (
+        <div className="space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-4">
+            <div>
+              <h3 className="font-urbanist font-bold text-xl text-white flex items-center gap-2">
+                <History className="w-5 h-5 text-[#A068FF]" />
+                <span>Sanitized Security & System Audit Trail</span>
+              </h3>
+              <p className="text-xs text-slate-400 mt-0.5">
+                Real-time immutable ledger of system actions. All sensitive keys (passwords, tokens) are cryptographically redacted.
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={fetchAuditEvents}
+              className="p-2 rounded-xl bg-slate-900 border border-white/10 hover:border-teal-400/40 text-slate-300 hover:text-white transition-all text-xs font-semibold flex items-center gap-1.5"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${auditLoading ? "animate-spin text-teal-400" : ""}`} />
+              <span>Refresh Trail</span>
+            </button>
+          </div>
+
+          <div className="rounded-2xl glass-panel overflow-hidden border border-white/[0.08]">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-white/[0.08] bg-white/[0.02] text-[10px] uppercase tracking-wider font-semibold text-slate-400">
+                    <th className="py-3.5 px-4">Timestamp</th>
+                    <th className="py-3.5 px-4">Event Type</th>
+                    <th className="py-3.5 px-4">Actor</th>
+                    <th className="py-3.5 px-4">Status</th>
+                    <th className="py-3.5 px-4">IP / Client</th>
+                    <th className="py-3.5 px-4">Details</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-white/[0.05] text-xs">
+                  {auditLoading ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-400">
+                        <div className="w-6 h-6 rounded-full border-2 border-teal-400 border-t-transparent animate-spin mx-auto mb-2" />
+                        Fetching sanitized audit trail…
+                      </td>
+                    </tr>
+                  ) : auditEvents.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} className="py-12 text-center text-slate-500 italic">
+                        No audit events recorded yet.
+                      </td>
+                    </tr>
+                  ) : (
+                    auditEvents.map((e) => (
+                      <tr key={e.id} className="hover:bg-white/[0.02] transition-colors">
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-400 whitespace-nowrap">
+                          {formatRelativeTime(e.timestamp)}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span className="font-mono text-[10px] px-2 py-0.5 rounded bg-slate-800 text-teal-300 font-bold">
+                            {e.event_type}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-300">
+                          {e.actor_id ? e.actor_id.slice(0, 12) + "…" : "SYSTEM"}
+                        </td>
+                        <td className="py-3.5 px-4">
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              e.status === "SUCCESS"
+                                ? "bg-emerald-500/15 text-emerald-300 border border-emerald-500/30"
+                                : "bg-rose-500/15 text-rose-300 border border-rose-500/30"
+                            }`}
+                          >
+                            {e.status}
+                          </span>
+                        </td>
+                        <td className="py-3.5 px-4 font-mono text-[11px] text-slate-500">
+                          {e.ip_address || "127.0.0.1"}
+                        </td>
+                        <td className="py-3.5 px-4 max-w-xs truncate text-[11px] text-slate-400 font-mono">
+                          {e.details ? JSON.stringify(e.details) : "—"}
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
           </div>
         </div>
       )}

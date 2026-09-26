@@ -1,22 +1,24 @@
 import axios from "axios";
 
-// When accessed from a mobile device or other computer on local network (e.g., http://192.168.1.5:5173),
-// dynamically route API requests to that host IP rather than failing against the phone's localhost.
+// In development (Vite dev server has proxy configured in vite.config.js),
+// return "" (empty string) so all API requests go to the current host/port (e.g. :5173).
+// Vite's proxy then securely forwards them to http://127.0.0.1:8000.
+// This guarantees mobile devices on local WiFi (e.g. 192.168.x.x:5173) can reach the backend
+// without needing port 8000 unblocked on Windows Firewall or bound to 0.0.0.0.
 const getApiBase = () => {
-  const envBase = import.meta.env.VITE_API_BASE;
+  let envBase = import.meta.env.VITE_API_BASE;
+  if (envBase) {
+    envBase = envBase.trim().replace(/\/+$/, "");
+  }
+  // If explicitly configured to an external cloud API (e.g., Render, Railway, Vercel), use it
   if (envBase && !envBase.includes("localhost") && !envBase.includes("127.0.0.1")) {
     return envBase;
   }
-  if (
-    typeof window !== "undefined" &&
-    window.location.hostname &&
-    window.location.hostname !== "localhost" &&
-    window.location.hostname !== "127.0.0.1" &&
-    !window.location.hostname.endsWith(".vercel.app")
-  ) {
-    return `http://${window.location.hostname}:8000`;
+  // In development mode, use relative URLs ("") so Vite proxy forwards to backend
+  if (import.meta.env.DEV) {
+    return "";
   }
-  return envBase || "http://localhost:8000";
+  return envBase || "";
 };
 
 const API_BASE = getApiBase();

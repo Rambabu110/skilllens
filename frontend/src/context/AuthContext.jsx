@@ -124,6 +124,37 @@ export function AuthProvider({ children }) {
         cleanEmail === "geneewoan@gmail.com" ||
         cleanEmail.includes("admin");
 
+      // 1. Direct Backend API Authentication (checks SQLite/Postgres for pre-seeded & newly created officers/admins)
+      try {
+        const res = await client.post("/auth/login", {
+          email: cleanEmail,
+          password: cleanPassword,
+        });
+        if (res.data?.access_token) {
+          const accessToken = res.data.access_token;
+          localStorage.setItem("skilllens_token", accessToken);
+          setToken(accessToken);
+
+          try {
+            const meRes = await client.get("/auth/me", {
+              headers: { Authorization: `Bearer ${accessToken}` },
+            });
+            setLearner(meRes.data);
+            return meRes.data;
+          } catch {
+            const basicLearner = {
+              email: cleanEmail,
+              name: cleanEmail.split("@")[0],
+              is_admin: cleanEmail.includes("admin") || cleanEmail === "geneewoan@gmail.com",
+            };
+            setLearner(basicLearner);
+            return basicLearner;
+          }
+        }
+      } catch (backendErr) {
+        console.warn("Direct backend login note:", backendErr.response?.data?.detail || backendErr.message);
+      }
+
       let cred;
       try {
         cred = await firebaseLogin(cleanEmail, cleanPassword);
@@ -226,8 +257,25 @@ export function AuthProvider({ children }) {
         // ignore
       }
 
+      const cleanEmail = (payload.email || "").trim().toLowerCase();
+      const cleanPassword = (payload.password || "").trim();
+
+      // 1. Direct Backend Registration (saves user in SQLite/PostgreSQL)
       try {
-        await firebaseRegister(payload.email, payload.password, payload.name);
+        await client.post("/auth/register", {
+          name: payload.name,
+          email: cleanEmail,
+          password: cleanPassword,
+          position_id: payload.position_id || null,
+          qualification: payload.qualification || "",
+          experience_years: parseFloat(payload.experience_years) || 0,
+        });
+      } catch (backendRegErr) {
+        console.warn("Direct backend registration note:", backendRegErr.response?.data?.detail || backendRegErr.message);
+      }
+
+      try {
+        await firebaseRegister(cleanEmail, cleanPassword, payload.name);
       } catch (err) {
         if (err.code === "auth/unauthorized-domain") {
           console.warn("Firebase unauthorized domain on Vercel during register. Storing registration credentials locally.");

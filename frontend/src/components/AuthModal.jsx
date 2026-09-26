@@ -3,7 +3,6 @@ import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
 import client from "../api/client";
 import {
-  Layers,
   ArrowRight,
   AlertCircle,
   Briefcase,
@@ -17,10 +16,13 @@ import {
   X,
   Eye,
   EyeOff,
+  Zap,
+  ShieldCheck,
 } from "lucide-react";
 
 function getFriendlyErrorMessage(err) {
   if (!err) return "An unexpected error occurred.";
+  const msg = err.message || "";
   const code = err.code || "";
   if (code === "auth/unverified-email") {
     return "Email not verified! Please check your Gmail Inbox and SPAM folder, click the verification link, and then sign in.";
@@ -99,6 +101,13 @@ export default function AuthModal() {
     if (isOpen) document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, closeAuthModal]);
+
+  function handleQuickDemo(email, password) {
+    setForm((prev) => ({ ...prev, email, password }));
+    setMode("login");
+    setError("");
+    setSuccessMsg(`Loaded credentials for ${email}. Click "Verify & Sign In" below.`);
+  }
 
   if (!isOpen) return null;
 
@@ -199,17 +208,19 @@ export default function AuthModal() {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 font-sans selection:bg-[#A068FF] selection:text-white"
       onClick={(e) => e.target === e.currentTarget && closeAuthModal()}
     >
       {/* Backdrop */}
-      <div className="absolute inset-0 bg-slate-950/85 backdrop-blur-md" />      {/* Modal Container */}
+      <div className="absolute inset-0 bg-[#060218]/90 backdrop-blur-xl" />
+
+      {/* Modal Container */}
       <div className="relative z-10 w-full max-w-md my-auto max-h-[92vh] overflow-y-auto space-y-4 animate-in fade-in slide-in-from-bottom-3 duration-200">
         {/* Close Button */}
         <div className="flex justify-end">
           <button
             onClick={closeAuthModal}
-            className="p-1.5 rounded-md bg-[#0e1a30] border border-white/10 text-slate-400 hover:text-white hover:bg-white/[0.05] transition-colors"
+            className="p-2 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Close"
           >
             <X className="w-4 h-4" />
@@ -218,27 +229,59 @@ export default function AuthModal() {
 
         {/* Brand Header */}
         <div className="text-center space-y-1">
-          <div className="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-[#0e1a30] border border-emerald-500/30 font-mono text-xs font-bold text-emerald-400 mb-1 shadow-sm">
-            MoS
+          <div className="inline-flex items-center justify-center w-10 h-10 rounded-xl bg-[#A068FF]/20 border border-[#A068FF]/40 text-[#A068FF] mb-1 shadow-sm">
+            <ShieldCheck className="w-6 h-6" />
           </div>
-          <h2 className="font-display font-bold text-xl text-white tracking-tight">
-            SkillLens <span className="text-emerald-400 text-xs font-mono px-1.5 py-0.5 rounded bg-white/[0.06] border border-white/10 ml-1">FRAC</span>
+          <h2 className="font-urbanist font-bold text-2xl text-white tracking-tight">
+            SkillLens AI
           </h2>
           <p className="text-xs text-slate-400 font-normal">
-            National Statistical Cadre Authentication
+            National Statistical Cadre Authentication (MoSPI NSS)
           </p>
         </div>
 
         {/* Card */}
-        <div className="p-5 sm:p-6 rounded-lg sovereign-card space-y-4 border border-white/10 shadow-2xl">
+        <div className="p-6 rounded-3xl bg-slate-900/90 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] space-y-4 relative overflow-hidden">
+          {/* Subtle top glow line */}
+          <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#A068FF] to-sky-500" />
+
+          {/* 1-Click Demo Personas */}
+          <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
+            <div className="flex items-center justify-between text-[11px] font-medium">
+              <span className="text-[#A068FF] flex items-center gap-1 font-bold font-urbanist">
+                <Zap className="w-3 h-3 fill-[#A068FF] text-[#A068FF]" />
+                1-Click Demo Personas
+              </span>
+              <span className="text-[10px] text-slate-500 font-mono">Pre-seeded</span>
+            </div>
+            <div className="grid grid-cols-2 gap-1.5">
+              <button
+                type="button"
+                onClick={() => handleQuickDemo("aditi.demo@skilllens.in", "demo1234")}
+                className="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-[#A068FF]/15 border border-white/10 hover:border-[#A068FF]/30 text-[11px] text-slate-300 hover:text-white font-medium text-left truncate transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-[#A068FF] shrink-0" />
+                <span className="truncate">Aditi (Officer)</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => handleQuickDemo("admin.demo@skilllens.in", "admin1234")}
+                className="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-sky-500/15 border border-white/10 hover:border-sky-500/30 text-[11px] text-slate-300 hover:text-white font-medium text-left truncate transition-colors flex items-center gap-1.5 cursor-pointer"
+              >
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
+                <span className="truncate">Admin (MoSPI)</span>
+              </button>
+            </div>
+          </div>
+
           {/* Mode Switcher */}
-          <div className="flex rounded-md bg-[#070d18] p-1 border border-white/10 w-full">
+          <div className="flex rounded-xl bg-black/50 p-1 border border-white/10 w-full">
             <button
               type="button"
-              className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all font-urbanist cursor-pointer ${
                 mode === "login"
-                  ? "bg-white/[0.08] text-white border border-white/10 shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#A068FF] text-white shadow-md font-bold"
+                  : "text-slate-400 hover:text-white"
               }`}
               onClick={() => {
                 setMode("login");
@@ -250,10 +293,10 @@ export default function AuthModal() {
             </button>
             <button
               type="button"
-              className={`flex-1 py-1.5 text-xs font-medium rounded transition-colors ${
+              className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all font-urbanist cursor-pointer ${
                 mode === "register"
-                  ? "bg-white/[0.08] text-white border border-white/10 shadow-sm"
-                  : "text-slate-400 hover:text-slate-200"
+                  ? "bg-[#A068FF] text-white shadow-md font-bold"
+                  : "text-slate-400 hover:text-white"
               }`}
               onClick={() => {
                 setMode("register");
@@ -270,7 +313,7 @@ export default function AuthModal() {
             type="button"
             onClick={handleGoogleSignIn}
             disabled={loading}
-            className="w-full py-2.5 px-4 rounded-md border border-white/10 bg-[#070d18] hover:bg-[#0b1424] text-slate-200 text-xs font-medium flex items-center justify-center gap-2.5 transition-colors active:scale-[0.98] shadow-sm disabled:opacity-50 min-h-[40px]"
+            className="w-full py-2.5 px-4 rounded-xl border border-white/10 bg-black/40 hover:bg-white/5 text-slate-200 text-xs font-semibold flex items-center justify-center gap-2.5 transition-all active:scale-[0.98] shadow-sm disabled:opacity-50 min-h-[40px] cursor-pointer"
           >
             <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
               <path fill="#EA4335" d="M12 5c1.54 0 2.93.56 4.02 1.48l3.01-3.01C17.21 1.77 14.77 1 12 1 7.42 1 3.55 3.6 1.72 7.37l3.66 2.84C6.26 7.35 8.9 5 12 5z" />
@@ -284,8 +327,8 @@ export default function AuthModal() {
           {/* Divider */}
           <div className="relative flex items-center justify-center">
             <div className="border-t border-white/10 w-full" />
-            <span className="bg-[#0c1322] px-3 text-[10px] uppercase font-mono tracking-widest text-slate-400">
-              Or official credentials
+            <span className="bg-[#060218] px-3 text-[10px] uppercase font-mono tracking-widest text-slate-400">
+              Or cadre credentials
             </span>
           </div>
 
@@ -296,7 +339,7 @@ export default function AuthModal() {
                 <input
                   required
                   placeholder="Officer Full Name"
-                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
+                  className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#A068FF] focus:ring-1 focus:ring-[#A068FF] transition-all min-h-[40px]"
                   value={form.name}
                   onChange={(e) => setForm({ ...form, name: e.target.value })}
                 />
@@ -311,8 +354,8 @@ export default function AuthModal() {
                 autoCapitalize="none"
                 autoCorrect="off"
                 spellCheck="false"
-                placeholder="Official Email Address (@nic.in / @gov.in / email)"
-                className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
+                placeholder="Cadre Officer Email"
+                className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#A068FF] focus:ring-1 focus:ring-[#A068FF] transition-all min-h-[40px]"
                 value={form.email}
                 onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
@@ -328,21 +371,21 @@ export default function AuthModal() {
                   autoCorrect="off"
                   spellCheck="false"
                   placeholder="Password"
-                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
+                  className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-10 pr-10 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#A068FF] focus:ring-1 focus:ring-[#A068FF] transition-all min-h-[40px]"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-200 p-1 focus:outline-none transition-colors"
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-white p-1 focus:outline-none transition-colors cursor-pointer"
                   tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
                   {showPassword ? (
-                    <EyeOff className="w-4 h-4 text-slate-400 hover:text-emerald-400 transition-colors" />
+                    <EyeOff className="w-4 h-4 text-slate-400 hover:text-[#A068FF] transition-colors" />
                   ) : (
-                    <Eye className="w-4 h-4 text-slate-400 hover:text-emerald-400 transition-colors" />
+                    <Eye className="w-4 h-4 text-slate-400 hover:text-[#A068FF] transition-colors" />
                   )}
                 </button>
               </div>
@@ -354,7 +397,7 @@ export default function AuthModal() {
                       setResetEmail(form.email);
                       setShowForgotModal(true);
                     }}
-                    className="text-[11px] text-emerald-400/80 hover:text-emerald-300 transition-colors pt-0.5"
+                    className="text-[11px] text-[#A068FF] hover:underline transition-colors pt-0.5 cursor-pointer"
                   >
                     Forgot password?
                   </button>
@@ -368,13 +411,13 @@ export default function AuthModal() {
                   <Briefcase className="w-3.5 h-3.5 text-slate-400 absolute left-3.5 top-3.5" />
                   <select
                     required
-                    className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
+                    className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white focus:outline-none focus:border-[#A068FF] focus:ring-1 focus:ring-[#A068FF] transition-all min-h-[40px]"
                     value={form.position_id}
                     onChange={(e) => setForm({ ...form, position_id: e.target.value })}
                   >
-                    <option value="">Select Official Statistical Cadre Position</option>
+                    <option value="">Select Statistical Cadre Position</option>
                     {positions.map((p) => (
-                      <option key={p.id} value={p.id} className="bg-[#070d18] text-white">
+                      <option key={p.id} value={p.id} className="bg-slate-900 text-white">
                         {p.title} ({p.department})
                       </option>
                     ))}
@@ -390,7 +433,7 @@ export default function AuthModal() {
                       <GraduationCap className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3.5" />
                       <input
                         placeholder="e.g. M.Sc Statistics"
-                        className="w-full bg-[#070d18] border border-white/10 rounded-md pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px]"
+                        className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#A068FF] focus:ring-1 focus:ring-[#A068FF] transition-all min-h-[40px]"
                         value={form.qualification}
                         onChange={(e) => setForm({ ...form, qualification: e.target.value })}
                       />
@@ -408,7 +451,7 @@ export default function AuthModal() {
                         max="50"
                         step="0.5"
                         placeholder="e.g. 2"
-                        className="w-full bg-[#070d18] border border-white/10 rounded-md pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 focus:ring-1 focus:ring-emerald-400 transition-colors min-h-[40px] num-tabular"
+                        className="w-full bg-slate-950/80 border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#A068FF] focus:ring-1 focus:ring-[#A068FF] transition-all min-h-[40px]"
                         value={form.experience_years}
                         onChange={(e) => setForm({ ...form, experience_years: e.target.value })}
                       />
@@ -416,8 +459,8 @@ export default function AuthModal() {
                   </div>
                 </div>
 
-                <div className="p-2.5 rounded-md bg-emerald-500/5 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-start gap-2">
-                  <Mail className="w-3.5 h-3.5 text-emerald-400 mt-0.5 shrink-0" />
+                <div className="p-2.5 rounded-xl bg-[#A068FF]/10 border border-[#A068FF]/20 text-[11px] text-purple-300 flex items-start gap-2">
+                  <Mail className="w-3.5 h-3.5 text-[#A068FF] mt-0.5 shrink-0" />
                   <span>
                     A verification link will be dispatched to your email. You must verify via your{" "}
                     <strong>Inbox or SPAM folder</strong> to activate cadre credentials.
@@ -427,7 +470,7 @@ export default function AuthModal() {
             )}
 
             {error && (
-              <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-2">
+              <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-xs text-rose-300 space-y-2">
                 <div className="flex items-start gap-2">
                   <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
                   <span className="leading-relaxed">{error}</span>
@@ -442,7 +485,7 @@ export default function AuthModal() {
                         type="button"
                         disabled={loading}
                         onClick={() => handleSubmit()}
-                        className="btn-primary text-xs py-1.5 px-3"
+                        className="px-3 py-1.5 rounded-lg bg-[#A068FF] text-white text-xs font-bold hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-md shadow-[#A068FF]/25 cursor-pointer"
                       >
                         {loading ? "Verifying..." : "I've Verified — Sign In"}
                       </button>
@@ -450,7 +493,7 @@ export default function AuthModal() {
                         type="button"
                         disabled={resendLoading}
                         onClick={handleResendVerification}
-                        className="text-xs font-medium text-slate-400 hover:text-emerald-300 underline disabled:opacity-50 ml-auto"
+                        className="text-xs font-medium text-slate-400 hover:text-[#A068FF] underline disabled:opacity-50 ml-auto cursor-pointer"
                       >
                         {resendLoading ? "Resending..." : "Resend Link"}
                       </button>
@@ -461,7 +504,7 @@ export default function AuthModal() {
             )}
 
             {successMsg && (
-              <div className="p-3 rounded-md bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2">
+              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-xs text-emerald-300 flex items-start gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">{successMsg}</span>
               </div>
@@ -470,11 +513,11 @@ export default function AuthModal() {
             <button
               type="submit"
               disabled={loading}
-              className="btn-primary w-full justify-center py-2.5 text-xs gap-2 min-h-[42px]"
+              className="w-full py-3 rounded-xl bg-[#A068FF] hover:bg-[#8e4ff8] text-white font-bold text-xs shadow-xl shadow-[#A068FF]/25 hover:shadow-[#A068FF]/40 active:scale-98 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer font-urbanist tracking-wide"
             >
               {loading ? (
                 <>
-                  <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                  <div className="w-3.5 h-3.5 rounded-full border-2 border-white border-t-transparent animate-spin" />
                   <span>Authenticating Cadre Credentials…</span>
                 </>
               ) : (
@@ -487,7 +530,7 @@ export default function AuthModal() {
           </form>
         </div>
 
-        <p className="text-[10px] font-mono text-slate-400 text-center">
+        <p className="text-[10px] font-urbanist text-slate-500 text-center">
           Ministry of Statistics and Programme Implementation • FRAC Methodology
         </p>
       </div>
@@ -495,15 +538,15 @@ export default function AuthModal() {
       {/* Forgot Password Sub-Modal */}
       {showForgotModal && (
         <div className="absolute inset-0 z-20 flex items-center justify-center p-4">
-          <div className="w-full max-w-sm rounded-lg sovereign-card p-6 space-y-4 border border-white/10 shadow-2xl relative z-30">
+          <div className="w-full max-w-sm rounded-2xl bg-slate-900 p-6 space-y-4 border border-white/10 shadow-2xl relative z-30">
             <div className="flex items-center gap-2 text-white">
-              <KeyRound className="w-4 h-4 text-emerald-400" />
-              <h3 className="font-semibold text-sm">Reset Password</h3>
+              <KeyRound className="w-4 h-4 text-[#A068FF]" />
+              <h3 className="font-urbanist font-bold text-sm">Reset Password</h3>
             </div>
             <p className="text-xs text-slate-400">
               Enter your official email to receive a secure password reset link.
             </p>
-            <div className="p-2.5 rounded-md bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
+            <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-300">
               ⚠️ <strong>Check SPAM folder:</strong> Reset emails often land in Gmail{" "}
               <strong>Spam</strong> or <strong>Promotions</strong>.
             </div>
@@ -514,7 +557,7 @@ export default function AuthModal() {
                   required
                   type="email"
                   placeholder="Official Email Address"
-                  className="w-full bg-[#070d18] border border-white/10 rounded-md pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-400 min-h-[40px]"
+                  className="w-full bg-slate-950 border border-white/10 rounded-xl pl-10 pr-3.5 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#A068FF] min-h-[40px]"
                   value={resetEmail}
                   onChange={(e) => setResetEmail(e.target.value)}
                 />
@@ -523,14 +566,14 @@ export default function AuthModal() {
                 <button
                   type="button"
                   onClick={() => setShowForgotModal(false)}
-                  className="btn-secondary flex-1 justify-center py-2 text-xs"
+                  className="flex-1 py-2 rounded-xl border border-white/10 text-xs font-semibold text-slate-400 hover:text-white cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={resetLoading}
-                  className="btn-primary flex-1 justify-center py-2 text-xs"
+                  className="flex-1 py-2 rounded-xl bg-[#A068FF] text-white text-xs font-bold hover:brightness-110 disabled:opacity-50 flex items-center justify-center gap-1.5 cursor-pointer font-urbanist"
                 >
                   {resetLoading ? "Sending…" : "Send Link"}
                 </button>

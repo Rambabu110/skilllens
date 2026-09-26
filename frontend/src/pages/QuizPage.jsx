@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import client from "../api/client";
 import { useAuthGate } from "../hooks/useAuthGate";
 import {
@@ -15,8 +16,8 @@ import {
   BookOpen,
   Check,
   AlertCircle,
-  LogIn,
 } from "lucide-react";
+import StatsCounter from "../components/ui/stats-counter";
 
 const STEPS = { SOURCE: "source", TAKING: "taking", RESULT: "result" };
 
@@ -48,47 +49,53 @@ export default function QuizPage() {
     if (!authed) return;
     setError("");
     setLoading(true);
-    setLoadingText(file ? "Uploading & Processing Document…" : "Generating Assessment Questions…");
+    setLoadingText(
+      mode === "adaptive"
+        ? "Calibrating Bayesian CAT Engine with FRAC Framework…"
+        : "Extracting Text & Generating Assessment Questions…"
+    );
+
     try {
-      let documentId = null;
-      if (file) {
-        const formData = new FormData();
-        formData.append("file", file);
-        const uploadRes = await client.post("/quiz/upload", formData, {
-          headers: { "Content-Type": "multipart/form-data" },
-        });
-        documentId = uploadRes.data.document_id;
-        setLoadingText("Generating Adaptive Questions & Rubrics…");
-      }
-
-      const genRes = await client.post("/quiz/generate", {
-        document_id: documentId,
-        module_id: !file ? preselectedModule : null,
-        num_questions: numQuestions,
-        language,
-        mode,
-      });
-      setQuiz(genRes.data);
-
       if (mode === "adaptive") {
-        setLoadingText("Initializing Adaptive Testing Session…");
-        // Start Computerized Adaptive Testing session
-        const adaptRes = await client.post("/quiz/adaptive/start", {
-          quiz_id: genRes.data.id,
-        });
-        setAdaptiveSession(adaptRes.data);
+        const payload = {
+          competency_id: location.state?.competencyId || preselectedModule || "comp_stat_sampling",
+          topic: location.state?.competencyName || preselectedTitle || "Statistical Sampling & Analysis",
+          language,
+        };
+        const res = await client.post("/quiz/adaptive/start", payload);
+        setAdaptiveSession(res.data);
         setSelectedOption(-1);
+        setStep(STEPS.TAKING);
       } else {
-        setAnswers(new Array(genRes.data.questions.length).fill(-1));
+        let res;
+        if (file) {
+          const formData = new FormData();
+          formData.append("file", file);
+          formData.append("num_questions", numQuestions);
+          formData.append("language", language);
+          res = await client.post("/quiz/generate", formData, {
+            headers: { "Content-Type": "multipart/form-data" },
+          });
+        } else if (preselectedModule) {
+          res = await client.post("/quiz/generate-from-module", {
+            module_id: preselectedModule,
+            num_questions: numQuestions,
+            language,
+          });
+        } else {
+          res = await client.post("/quiz/generate-from-topic", {
+            topic: location.state?.competencyName || "Official Statistics & Data Quality",
+            num_questions: numQuestions,
+            language,
+          });
+        }
+        setQuiz(res.data);
+        setAnswers(new Array(res.data.questions.length).fill(-1));
         setCurrentIndex(0);
+        setStep(STEPS.TAKING);
       }
-
-      setStep(STEPS.TAKING);
     } catch (err) {
-      setError(
-        err.response?.data?.detail ||
-          "Unable to generate quiz. Please verify that the file is accessible and try again."
-      );
+      setError(err.response?.data?.detail || "Error generating assessment.");
     } finally {
       setLoading(false);
       setLoadingText("");
@@ -97,16 +104,17 @@ export default function QuizPage() {
 
   async function handleAdaptiveAnswer() {
     if (selectedOption === -1 || !adaptiveSession) return;
-    setLoading(true);
     setError("");
+    setLoading(true);
+
     try {
       const res = await client.post("/quiz/adaptive/answer", {
         session_id: adaptiveSession.session_id,
-        question_index: adaptiveSession.question_index,
+        question_id: adaptiveSession.question.id,
         selected_option: selectedOption,
       });
 
-      if (res.data.status === "quiz_complete") {
+      if (res.data.status === "converged") {
         setResult(res.data);
         setStep(STEPS.RESULT);
       } else {
@@ -114,17 +122,23 @@ export default function QuizPage() {
         setSelectedOption(-1);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Error processing adaptive answer.");
+      setError(err.response?.data?.detail || "Error processing adaptive response.");
     } finally {
       setLoading(false);
     }
   }
 
   async function handleSubmit() {
-    setLoading(true);
     setError("");
+    setLoading(true);
+
     try {
-      const res = await client.post("/quiz/submit", { quiz_id: quiz.id, answers });
+      const payload = {
+        quiz_id: quiz.id,
+        answers,
+        document_id: quiz.document_id,
+      };
+      const res = await client.post("/quiz/submit", payload);
       setResult(res.data);
       setStep(STEPS.RESULT);
     } catch (err) {
@@ -157,51 +171,58 @@ export default function QuizPage() {
   }
 
   return (
-    <div className="space-y-7 pb-12 max-w-4xl mx-auto">
+    <motion.div
+      initial={{ opacity: 0, y: 15 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4 }}
+      className="space-y-8 pb-16 max-w-4xl mx-auto"
+    >
       {/* Visual Stepper */}
-      <div className="flex items-center justify-between px-5 py-3 rounded-lg sovereign-card text-xs text-slate-400 font-mono">
-        <div className={`flex items-center gap-2 ${step === STEPS.SOURCE ? "text-emerald-400 font-semibold" : "text-slate-400"}`}>
-          <span className="w-5 h-5 rounded border border-current flex items-center justify-center text-[10px] num-tabular">1</span>
-          <span className="font-sans">Protocol Source</span>
+      <div className="flex items-center justify-between px-3.5 py-3 sm:px-6 sm:py-4 rounded-2xl sovereign-card text-xs sm:text-sm font-urbanist font-bold border border-white/10 shadow-lg">
+        <div className={`flex items-center gap-1.5 sm:gap-2.5 ${step === STEPS.SOURCE ? "text-[#C084FC]" : "text-slate-400"}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono num-tabular border ${step === STEPS.SOURCE ? "border-[#A068FF] bg-[#A068FF]/20 text-[#A068FF]" : "border-white/10"}`}>1</span>
+          <span><span className="hidden sm:inline">Protocol </span>Source</span>
         </div>
-        <div className="w-8 sm:w-16 h-[1px] bg-white/10" />
-        <div className={`flex items-center gap-2 ${step === STEPS.TAKING ? "text-emerald-400 font-semibold" : "text-slate-400"}`}>
-          <span className="w-5 h-5 rounded border border-current flex items-center justify-center text-[10px] num-tabular">2</span>
-          <span className="font-sans">Adaptive Exam</span>
+        <div className="w-4 sm:w-16 h-[1px] bg-white/10 shrink-0" />
+        <div className={`flex items-center gap-1.5 sm:gap-2.5 ${step === STEPS.TAKING ? "text-[#C084FC]" : "text-slate-400"}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono num-tabular border ${step === STEPS.TAKING ? "border-[#A068FF] bg-[#A068FF]/20 text-[#A068FF]" : "border-white/10"}`}>2</span>
+          <span><span className="hidden sm:inline">Adaptive </span>Exam</span>
         </div>
-        <div className="w-8 sm:w-16 h-[1px] bg-white/10" />
-        <div className={`flex items-center gap-2 ${step === STEPS.RESULT ? "text-emerald-400 font-semibold" : "text-slate-400"}`}>
-          <span className="w-5 h-5 rounded border border-current flex items-center justify-center text-[10px] num-tabular">3</span>
-          <span className="font-sans">Cadre Scoring</span>
+        <div className="w-4 sm:w-16 h-[1px] bg-white/10 shrink-0" />
+        <div className={`flex items-center gap-1.5 sm:gap-2.5 ${step === STEPS.RESULT ? "text-[#C084FC]" : "text-slate-400"}`}>
+          <span className={`w-5 h-5 sm:w-6 sm:h-6 rounded-lg flex items-center justify-center text-[11px] sm:text-xs font-mono num-tabular border ${step === STEPS.RESULT ? "border-[#A068FF] bg-[#A068FF]/20 text-[#A068FF]" : "border-white/10"}`}>3</span>
+          <span><span className="hidden sm:inline">Cadre </span>Scoring</span>
         </div>
       </div>
 
       {/* Step 1: Configuration & Source Selection */}
       {step === STEPS.SOURCE && (
-        <div className="p-5 sm:p-7 rounded-lg sovereign-card space-y-6">
-          <div className="border-b border-white/[0.08] pb-4">
-            <div className="flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              <h2 className="font-display font-bold text-lg text-white">
+        <div className="p-6 sm:p-8 rounded-2xl sovereign-card border border-white/10 shadow-2xl space-y-6">
+          <div className="border-b border-white/10 pb-5">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-lg bg-[#A068FF]/15 border border-[#A068FF]/30 flex items-center justify-center text-[#A068FF]">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <h2 className="font-urbanist font-bold text-xl sm:text-2xl text-white">
                 Computerized Adaptive Testing Engine
               </h2>
             </div>
-            <p className="text-xs text-slate-400 mt-1">
+            <p className="text-xs sm:text-sm text-slate-300 mt-1.5 leading-relaxed">
               Dynamic item selection calibrated to the FRAC framework or zero-shot parsed training circulars.
             </p>
           </div>
 
           {/* Preselected Module Notification */}
           {preselectedTitle && !file && (
-            <div className="p-3.5 rounded-md bg-[#0c1629] border border-emerald-500/30 flex items-center justify-between">
+            <div className="p-4 rounded-xl bg-white/[0.025] border border-[#A068FF]/30 flex items-center justify-between shadow-[0_0_15px_rgba(160,104,255,0.08)]">
               <div className="flex items-center gap-3">
-                <BookOpen className="w-4 h-4 text-emerald-400 shrink-0" />
+                <BookOpen className="w-5 h-5 text-[#A068FF] shrink-0" />
                 <div>
-                  <p className="text-xs font-semibold text-white">Active Curriculum Reference</p>
-                  <p className="text-[11px] text-slate-300 font-sans">{preselectedTitle}</p>
+                  <p className="text-xs font-urbanist font-bold text-white">Active Curriculum Reference</p>
+                  <p className="text-xs text-slate-300 font-sans mt-0.5">{preselectedTitle}</p>
                 </div>
               </div>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-[#A068FF]/15 text-[#C084FC] border border-[#A068FF]/30 font-semibold">
                 LOCKED
               </span>
             </div>
@@ -209,38 +230,41 @@ export default function QuizPage() {
 
           {/* File Upload Zone */}
           <div>
-            <label className="block text-xs font-medium text-slate-300 mb-2 font-mono">
+            <label className="block text-xs font-bold text-slate-300 mb-2 font-urbanist uppercase tracking-wider">
               DOCUMENT CONTEXT (OPTIONAL PDF CIRCULAR)
             </label>
             <div
-              className={`border border-dashed rounded-lg p-6 text-center transition-colors ${
+              className={`border-2 border-dashed rounded-2xl p-7 text-center transition-all bg-white/[0.015] hover:bg-white/[0.03] ${
                 file
-                  ? "border-emerald-500/50 bg-[#070d18]"
-                  : "border-white/15 hover:border-white/25 bg-[#070d18]"
+                  ? "border-[#A068FF]/60 bg-[#A068FF]/5"
+                  : "border-white/15 hover:border-white/30"
               }`}
             >
               <input
                 type="file"
-                accept=".pdf"
+                accept=".pdf,.txt,.md"
                 id="doc-upload"
                 className="hidden"
-                onChange={(e) => setFile(e.target.files[0] || null)}
+                onChange={(e) => {
+                  setFile(e.target.files[0] || null);
+                  setError("");
+                }}
               />
               <label htmlFor="doc-upload" className="cursor-pointer flex flex-col items-center">
-                <UploadCloud className={`w-7 h-7 mb-2 ${file ? "text-emerald-400" : "text-slate-500"}`} />
+                <UploadCloud className={`w-8 h-8 mb-2.5 ${file ? "text-[#A068FF]" : "text-slate-400"}`} />
                 {file ? (
                   <div>
-                    <p className="text-xs font-semibold text-emerald-300 font-mono">{file.name}</p>
-                    <p className="text-[10px] text-slate-400 mt-0.5 font-mono">
+                    <p className="text-sm font-urbanist font-bold text-[#C084FC]">{file.name}</p>
+                    <p className="text-xs text-slate-400 mt-1 font-mono">
                       {(file.size / 1024).toFixed(1)} KB · Click to replace
                     </p>
                   </div>
                 ) : (
                   <div>
-                    <p className="text-xs font-medium text-slate-300">
-                      Drop official circular or manual PDF, or <span className="text-emerald-400 underline underline-offset-2">Select file</span>
+                    <p className="text-sm font-medium text-slate-200">
+                      Drop official circular or manual PDF, or <span className="text-[#A068FF] font-semibold underline underline-offset-2">Select file</span>
                     </p>
-                    <p className="text-[10px] text-slate-400 mt-1">
+                    <p className="text-xs text-slate-400 mt-1">
                       System will map content across statistical competencies
                     </p>
                   </div>
@@ -250,28 +274,28 @@ export default function QuizPage() {
           </div>
 
           {/* Configuration Options */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 pt-1">
             {/* Assessment Mode Toggle */}
             <div className="sm:col-span-2">
-              <label className="block text-xs font-medium text-slate-300 mb-2 flex items-center justify-between font-mono">
+              <label className="block text-xs font-bold text-slate-300 mb-2.5 flex items-center justify-between font-urbanist uppercase tracking-wider">
                 <span>EVALUATION PROTOCOL</span>
-                <span className="text-[11px] text-slate-400 font-normal">CAT dynamically branches difficulty</span>
+                <span className="text-xs text-slate-400 font-normal font-sans">CAT dynamically branches difficulty</span>
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <button
                   type="button"
                   onClick={() => setMode("adaptive")}
-                  className={`p-3.5 rounded-lg text-left transition-colors border ${
+                  className={`p-4 rounded-xl text-left transition-all border ${
                     mode === "adaptive"
-                      ? "bg-[#0c1629] border-emerald-400 text-white"
-                      : "bg-[#070d18] border-white/10 text-slate-400 hover:text-slate-300"
+                      ? "bg-[#A068FF]/15 border-[#A068FF] text-white shadow-[0_0_15px_rgba(160,104,255,0.2)]"
+                      : "bg-white/[0.025] border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-white">Computerized Adaptive Testing</span>
-                    <span className="px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-400 text-[9px] font-mono font-bold uppercase">Active</span>
+                    <span className="text-sm font-urbanist font-bold text-white">Computerized Adaptive Testing</span>
+                    <span className="px-2 py-0.5 rounded-full bg-[#A068FF]/20 text-[#C084FC] text-xs font-mono font-bold uppercase">Active</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1">
                     Bayesian ability (&theta;) scoring; dynamically serves easier/harder items until convergence.
                   </p>
                 </button>
@@ -279,17 +303,17 @@ export default function QuizPage() {
                 <button
                   type="button"
                   onClick={() => setMode("fixed")}
-                  className={`p-3.5 rounded-lg text-left transition-colors border ${
+                  className={`p-4 rounded-xl text-left transition-all border ${
                     mode === "fixed"
-                      ? "bg-[#0c1629] border-emerald-400 text-white"
-                      : "bg-[#070d18] border-white/10 text-slate-400 hover:text-slate-300"
+                      ? "bg-[#A068FF]/15 border-[#A068FF] text-white shadow-[0_0_15px_rgba(160,104,255,0.2)]"
+                      : "bg-white/[0.025] border-white/10 text-slate-300 hover:text-white hover:bg-white/[0.05]"
                   }`}
                 >
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-xs font-semibold text-slate-200">Fixed-Length Battery</span>
-                    <span className="px-1.5 py-0.2 rounded bg-white/[0.06] text-slate-400 text-[9px] font-mono">Static</span>
+                    <span className="text-sm font-urbanist font-bold text-slate-200">Fixed-Length Battery</span>
+                    <span className="px-2 py-0.5 rounded-full bg-white/[0.06] text-slate-400 text-xs font-mono">Static</span>
                   </div>
-                  <p className="text-[11px] text-slate-400 leading-snug">
+                  <p className="text-xs text-slate-400 leading-relaxed mt-1">
                     Standard linear item sequence with predetermined question set.
                   </p>
                 </button>
@@ -298,7 +322,7 @@ export default function QuizPage() {
 
             {/* Question Count */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-2 font-mono">
+              <label className="block text-xs font-bold text-slate-300 mb-2 font-urbanist uppercase tracking-wider">
                 {mode === "adaptive" ? "QUESTION POOL CAPACITY" : "ITEM COUNT"}
               </label>
               <div className="flex gap-2">
@@ -307,10 +331,10 @@ export default function QuizPage() {
                     key={count}
                     type="button"
                     onClick={() => setNumQuestions(count)}
-                    className={`flex-1 py-1.5 rounded-md text-xs font-mono font-medium transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-xs font-mono font-medium transition-all ${
                       numQuestions === count
-                        ? "bg-emerald-400 text-slate-950 font-bold"
-                        : "bg-[#070d18] text-slate-400 hover:text-white border border-white/10"
+                        ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white font-bold shadow-[0_0_10px_rgba(160,104,255,0.4)]"
+                        : "bg-white/[0.025] text-slate-300 hover:text-white border border-white/10"
                     }`}
                   >
                     {count}
@@ -321,8 +345,8 @@ export default function QuizPage() {
 
             {/* Language Toggle */}
             <div>
-              <label className="block text-xs font-medium text-slate-300 mb-2 flex items-center gap-1.5 font-mono">
-                <Languages className="w-3.5 h-3.5 text-slate-400" />
+              <label className="block text-xs font-bold text-slate-300 mb-2 flex items-center gap-1.5 font-urbanist uppercase tracking-wider">
+                <Languages className="w-4 h-4 text-[#A068FF]" />
                 <span>OFFICIAL LANGUAGE</span>
               </label>
               <div className="flex gap-2">
@@ -334,10 +358,10 @@ export default function QuizPage() {
                     key={lang.id}
                     type="button"
                     onClick={() => setLanguage(lang.id)}
-                    className={`flex-1 py-1.5 rounded-md text-xs font-medium transition-colors ${
+                    className={`flex-1 py-2 rounded-xl text-xs font-medium transition-all ${
                       language === lang.id
-                        ? "bg-emerald-400 text-slate-950 font-bold"
-                        : "bg-[#070d18] text-slate-400 hover:text-white border border-white/10"
+                        ? "bg-gradient-to-r from-[#A068FF] to-[#7C3AED] text-white font-bold shadow-[0_0_10px_rgba(160,104,255,0.4)]"
+                        : "bg-white/[0.025] text-slate-300 hover:text-white border border-white/10"
                     }`}
                   >
                     {lang.label}
@@ -348,7 +372,7 @@ export default function QuizPage() {
           </div>
 
           {error && (
-            <div className="p-3 rounded-md bg-rose-500/10 border border-rose-500/25 text-xs text-rose-300 flex items-center gap-2 font-mono">
+            <div className="p-3.5 rounded-xl bg-rose-500/10 border border-rose-500/30 text-xs sm:text-sm text-rose-300 flex items-center gap-2 font-mono">
               <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
               <span>{error}</span>
             </div>
@@ -357,16 +381,16 @@ export default function QuizPage() {
           <button
             onClick={handleGenerate}
             disabled={loading}
-            className="btn-primary w-full justify-center py-2.5 text-xs gap-2"
+            className="btn-primary w-full justify-center py-3 text-sm gap-2.5 shadow-[0_0_20px_rgba(160,104,255,0.4)]"
           >
             {loading ? (
               <>
-                <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                 <span>{loadingText || "Processing Assessment…"}</span>
               </>
             ) : (
               <>
-                <Sparkles className="w-3.5 h-3.5" />
+                <Sparkles className="w-4 h-4" />
                 <span>Initialize Adaptive Assessment</span>
               </>
             )}
@@ -376,16 +400,16 @@ export default function QuizPage() {
 
       {/* Step 2: Taking Quiz */}
       {step === STEPS.TAKING && (quiz || adaptiveSession) && (
-        <div className="space-y-5">
+        <div className="space-y-6">
           {mode === "adaptive" && adaptiveSession ? (
             /* Adaptive Testing Header: Live Difficulty Meter & Ability Theta */
-            <div className="p-5 sm:p-6 rounded-lg sovereign-card space-y-4">
-              <div className="flex flex-wrap items-center justify-between gap-3 text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-emerald-400" />
-                  <span className="font-semibold text-white">Computerized Adaptive Testing</span>
-                  <span className="text-slate-400 font-mono">·</span>
-                  <span className="text-emerald-300 font-mono font-medium">
+            <div className="p-6 sm:p-7 rounded-2xl sovereign-card border border-white/10 space-y-5 shadow-xl">
+              <div className="flex flex-wrap items-center justify-between gap-3 text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-2.5 h-2.5 rounded-full bg-[#A068FF] shadow-[0_0_8px_#A068FF] animate-pulse" />
+                  <span className="font-urbanist font-bold text-white tracking-wide">Computerized Adaptive Testing</span>
+                  <span className="text-slate-500 font-mono">·</span>
+                  <span className="text-[#C084FC] font-mono font-semibold">
                     Item #{adaptiveSession.questions_answered + 1}
                   </span>
                 </div>
@@ -393,9 +417,9 @@ export default function QuizPage() {
                 <div className="flex items-center gap-3">
                   {adaptiveSession.difficulty_trend && adaptiveSession.difficulty_trend !== "same" && (
                     <span
-                      className={`px-2 py-0.5 rounded text-[10px] font-mono font-medium border ${
+                      className={`px-2.5 py-1 rounded-lg text-xs font-mono font-bold border ${
                         adaptiveSession.difficulty_trend === "harder"
-                          ? "bg-emerald-500/15 text-emerald-300 border-emerald-500/30"
+                          ? "bg-[#A068FF]/15 text-[#C084FC] border-[#A068FF]/30"
                           : "bg-amber-500/15 text-amber-300 border-amber-500/30"
                       }`}
                     >
@@ -405,9 +429,9 @@ export default function QuizPage() {
                     </span>
                   )}
 
-                  <div className="px-2.5 py-1 rounded-md bg-[#070d18] border border-white/10 flex items-center gap-1.5 font-mono">
-                    <span className="text-[10px] uppercase text-slate-400">Ability (&theta;):</span>
-                    <span className="font-bold text-white text-xs num-tabular">
+                  <div className="px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/10 flex items-center gap-2 font-mono">
+                    <span className="text-xs uppercase text-slate-400">Ability (&theta;):</span>
+                    <span className="font-bold text-white text-xs sm:text-sm num-tabular">
                       {adaptiveSession.theta?.toFixed(2)} / 5.00
                     </span>
                   </div>
@@ -415,11 +439,11 @@ export default function QuizPage() {
               </div>
 
               {/* Live 5-Level Difficulty Meter */}
-              <div className="space-y-2 pt-2 border-t border-white/[0.08]">
-                <div className="flex items-center justify-between text-[11px] font-mono">
-                  <span className="text-slate-400">CURRENT DIFFICULTY ROUTING:</span>
-                  <span className="font-semibold text-white flex items-center gap-1.5">
-                    <span className="text-emerald-400">Level {adaptiveSession.current_difficulty}</span>
+              <div className="space-y-3 pt-3 border-t border-white/10">
+                <div className="flex items-center justify-between text-xs font-mono">
+                  <span className="text-slate-400 font-medium">CURRENT DIFFICULTY ROUTING:</span>
+                  <span className="font-semibold text-white flex items-center gap-2">
+                    <span className="text-[#C084FC] font-bold">Level {adaptiveSession.current_difficulty}</span>
                     <span className="text-slate-400 font-normal">
                       (
                       {adaptiveSession.current_difficulty === 1
@@ -436,25 +460,25 @@ export default function QuizPage() {
                   </span>
                 </div>
 
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-2.5">
                   {[1, 2, 3, 4, 5].map((lvl) => {
                     const isActive = lvl === adaptiveSession.current_difficulty;
                     const isPassed = lvl < adaptiveSession.current_difficulty;
                     return (
                       <div
                         key={lvl}
-                        className={`py-1.5 px-1 rounded-md text-center border font-mono transition-colors ${
+                        className={`py-2 px-1.5 rounded-xl text-center border font-mono transition-all ${
                           isActive
-                            ? "bg-emerald-500/15 border-emerald-400 text-white"
+                            ? "bg-[#A068FF]/20 border-[#A068FF] text-white shadow-[0_0_12px_rgba(160,104,255,0.3)]"
                             : isPassed
-                            ? "bg-[#070d18] border-emerald-500/30 text-emerald-400/80"
-                            : "bg-[#070d18] border-white/[0.06] text-slate-400"
+                            ? "bg-white/[0.04] border-[#A068FF]/30 text-[#C084FC]"
+                            : "bg-white/[0.015] border-white/10 text-slate-500"
                         }`}
                       >
-                        <p className={`text-xs font-semibold ${isActive ? "text-emerald-300" : ""}`}>
+                        <p className={`text-xs sm:text-sm font-bold ${isActive ? "text-[#C084FC]" : ""}`}>
                           L{lvl}
                         </p>
-                        <p className="text-[9px] truncate">
+                        <p className="text-[10px] truncate mt-0.5 opacity-80">
                           {lvl === 1 ? "Recall" : lvl === 2 ? "Basic" : lvl === 3 ? "Standard" : lvl === 4 ? "Complex" : "Expert"}
                         </p>
                       </div>
@@ -465,24 +489,24 @@ export default function QuizPage() {
             </div>
           ) : (
             /* Classic Fixed Header */
-            <div className="p-4 rounded-lg sovereign-card flex flex-col gap-2.5">
-              <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2">
-                  <span className="font-semibold text-white font-mono">
+            <div className="p-5 sm:p-6 rounded-2xl sovereign-card border border-white/10 shadow-xl flex flex-col gap-3">
+              <div className="flex items-center justify-between text-xs sm:text-sm">
+                <div className="flex items-center gap-2.5">
+                  <span className="font-bold text-white font-urbanist text-sm sm:text-base">
                     Question {currentIndex + 1} / {quiz?.questions.length}
                   </span>
-                  <span className="text-slate-400">·</span>
+                  <span className="text-slate-500">·</span>
                   <span className="text-slate-300 font-medium">
                     {quiz?.title || "Statistical Assessment Battery"}
                   </span>
                 </div>
-                <span className="text-slate-400 font-mono text-[11px]">
+                <span className="text-slate-400 font-mono text-xs">
                   {answers.filter((a) => a !== -1).length} completed
                 </span>
               </div>
-              <div className="w-full bg-[#070d18] rounded-full h-1.5 overflow-hidden border border-white/[0.06]">
+              <div className="w-full bg-white/[0.05] rounded-full h-2 overflow-hidden border border-white/10">
                 <div
-                  className="bg-emerald-400 h-full rounded-full transition-all duration-300"
+                  className="bg-gradient-to-r from-[#A068FF] to-[#7C3AED] h-full rounded-full transition-all duration-300"
                   style={{
                     width: `${((currentIndex + 1) / (quiz?.questions.length || 1)) * 100}%`,
                   }}
@@ -499,24 +523,24 @@ export default function QuizPage() {
             const qDiff = isAdapt ? adaptiveSession.current_difficulty : q.difficulty;
 
             return (
-              <div className="p-5 sm:p-7 rounded-lg sovereign-card space-y-5">
+              <div className="p-6 sm:p-8 rounded-2xl sovereign-card border border-white/10 space-y-6 shadow-2xl">
                 <div className="flex items-center justify-between gap-3">
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 text-[10px] font-mono font-semibold uppercase tracking-wider">
+                  <span className="px-3 py-1 rounded-full bg-[#A068FF]/15 text-[#C084FC] border border-[#A068FF]/30 text-xs font-mono font-bold uppercase tracking-wider">
                     Level {qDiff} FRAC Item
                   </span>
                   {isAdapt && (
-                    <span className="text-[11px] font-mono text-slate-400">
-                      Theta target: <span className="text-slate-200">{adaptiveSession.theta?.toFixed(2)}</span>
+                    <span className="text-xs font-mono text-slate-400">
+                      Theta target: <span className="text-slate-200 font-bold">{adaptiveSession.theta?.toFixed(2)}</span>
                     </span>
                   )}
                 </div>
 
-                <h3 className="font-display font-semibold text-base sm:text-lg text-white leading-relaxed">
+                <h3 className="font-urbanist font-bold text-lg sm:text-xl text-white leading-relaxed tracking-tight">
                   {q.question}
                 </h3>
 
                 {/* Options List */}
-                <div className="space-y-2.5">
+                <div className="space-y-3">
                   {q.options.map((opt, oIdx) => {
                     const isSelected = currentSelected === oIdx;
 
@@ -525,51 +549,68 @@ export default function QuizPage() {
                         key={oIdx}
                         type="button"
                         onClick={() => handleSelectOption(currentIndex, oIdx)}
-                        className={`w-full p-3.5 rounded-lg text-left text-xs font-medium transition-colors flex items-center justify-between gap-3 ${
+                        className={`w-full p-4 sm:p-5 rounded-xl text-left text-sm font-medium transition-all flex items-center justify-between gap-4 ${
                           isSelected
-                            ? "bg-[#0c1629] text-white border border-emerald-400"
-                            : "bg-[#070d18] text-slate-300 border border-white/[0.08] hover:border-white/20"
+                            ? "bg-[#A068FF]/15 text-white border-2 border-[#A068FF] shadow-[0_0_15px_rgba(160,104,255,0.25)]"
+                            : "bg-white/[0.02] text-slate-300 border border-white/10 hover:border-white/25 hover:bg-white/[0.04]"
                         }`}
                       >
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3.5">
                           <span
-                            className={`w-5 h-5 rounded flex items-center justify-center text-[10px] font-mono font-bold shrink-0 ${
+                            className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-mono font-bold shrink-0 transition-colors ${
                               isSelected
-                                ? "bg-emerald-400 text-slate-950"
-                                : "bg-white/[0.06] text-slate-300"
+                                ? "bg-[#A068FF] text-white shadow-[0_0_10px_rgba(160,104,255,0.5)]"
+                                : "bg-white/10 text-slate-300"
                             }`}
                           >
                             {String.fromCharCode(65 + oIdx)}
                           </span>
                           <span className="leading-relaxed font-sans">{opt}</span>
                         </div>
-                        {isSelected && <Check className="w-4 h-4 text-emerald-400 shrink-0" />}
+                        {isSelected && <Check className="w-5 h-5 text-[#A068FF] shrink-0" />}
                       </button>
                     );
                   })}
                 </div>
 
+                {/* Question-Level Source Evidence Traceability */}
+                {(q.source_excerpt || q.document_name) && (
+                  <div className="p-4 rounded-xl bg-[#A068FF]/5 border border-[#A068FF]/20 text-xs sm:text-sm space-y-1.5">
+                    <div className="flex items-center justify-between text-xs font-mono text-slate-400">
+                      <span className="text-[#C084FC] font-semibold">
+                        Grounded Source: {q.document_name || "Official Curriculum Reference"}
+                      </span>
+                      <span>Page {q.page_number || 1}</span>
+                    </div>
+                    {q.source_excerpt && (
+                      <p className="text-slate-300 text-xs leading-relaxed italic border-l-2 border-[#A068FF] pl-3 mt-1.5">
+                        "{q.source_excerpt}"
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Action Navigation */}
-                <div className="flex items-center justify-between pt-5 border-t border-white/[0.08]">
+                <div className="flex items-center justify-between pt-6 border-t border-white/10">
                   {isAdapt ? (
                     <>
-                      <div className="text-[11px] text-slate-400 font-mono">
+                      <div className="text-xs text-slate-400 font-mono">
                         Item response triggers Bayesian theta update.
                       </div>
                       <button
                         onClick={handleAdaptiveAnswer}
                         disabled={loading || selectedOption === -1}
-                        className="btn-primary text-xs py-2 px-4 gap-1.5"
+                        className="btn-primary text-xs sm:text-sm py-2.5 px-5 gap-2"
                       >
                         {loading ? (
                           <>
-                            <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                            <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                             <span>Updating Theta…</span>
                           </>
                         ) : (
                           <>
                             <span>Submit & Continue</span>
-                            <ArrowRight className="w-3.5 h-3.5" />
+                            <ArrowRight className="w-4 h-4" />
                           </>
                         )}
                       </button>
@@ -579,34 +620,34 @@ export default function QuizPage() {
                       <button
                         onClick={() => setCurrentIndex((prev) => Math.max(0, prev - 1))}
                         disabled={currentIndex === 0}
-                        className="btn-secondary text-xs py-1.5 px-3 gap-1"
+                        className="btn-secondary text-xs sm:text-sm py-2 px-4 gap-1.5"
                       >
-                        <ArrowLeft className="w-3.5 h-3.5" />
+                        <ArrowLeft className="w-4 h-4" />
                         <span>Previous</span>
                       </button>
 
                       {currentIndex < quiz.questions.length - 1 ? (
                         <button
                           onClick={() => setCurrentIndex((prev) => prev + 1)}
-                          className="btn-primary text-xs py-1.5 px-3 gap-1"
+                          className="btn-primary text-xs sm:text-sm py-2 px-4 gap-1.5"
                         >
                           <span>Next Question</span>
-                          <ArrowRight className="w-3.5 h-3.5" />
+                          <ArrowRight className="w-4 h-4" />
                         </button>
                       ) : (
                         <button
                           onClick={handleSubmit}
                           disabled={loading || answers.includes(-1)}
-                          className="btn-primary text-xs py-1.5 px-3.5 gap-1.5"
+                          className="btn-primary text-xs sm:text-sm py-2.5 px-5 gap-2"
                         >
                           {loading ? (
                             <>
-                              <div className="w-3.5 h-3.5 rounded-full border-2 border-slate-950 border-t-transparent animate-spin" />
+                              <div className="w-4 h-4 rounded-full border-2 border-white border-t-transparent animate-spin" />
                               <span>Scoring…</span>
                             </>
                           ) : (
                             <>
-                              <Award className="w-3.5 h-3.5" />
+                              <Award className="w-4 h-4" />
                               <span>Submit Assessment</span>
                             </>
                           )}
@@ -623,71 +664,82 @@ export default function QuizPage() {
 
       {/* Step 3: Quiz Results & Verification */}
       {step === STEPS.RESULT && result && (
-        <div className="space-y-6">
-          <div className="p-6 sm:p-8 rounded-lg sovereign-card text-center">
-            <div className="w-12 h-12 rounded-lg bg-[#0e1a30] border border-emerald-500/40 flex items-center justify-center mx-auto mb-3.5 shadow-sm">
-              <Award className="w-6 h-6 text-emerald-400" />
+        <div className="space-y-8">
+          <div className="p-7 sm:p-10 rounded-2xl sovereign-card border border-white/10 text-center shadow-2xl space-y-6">
+            <div className="w-14 h-14 rounded-2xl bg-[#A068FF]/20 border border-[#A068FF]/40 flex items-center justify-center mx-auto text-[#A068FF] shadow-[0_0_20px_rgba(160,104,255,0.3)]">
+              <Award className="w-7 h-7" />
             </div>
 
-            <h2 className="font-display font-bold text-xl text-white">
-              Assessment Verified & Logged
-            </h2>
-            <p className="text-xs text-slate-400 mt-1 max-w-lg mx-auto">
-              Evaluation results and Bayesian item response parameters recorded to your sovereign competency passbook.
-            </p>
+            <div>
+              <h2 className="font-urbanist font-extrabold text-2xl sm:text-3xl text-white tracking-tight">
+                Assessment Verified & Logged
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-300 mt-1.5 max-w-xl mx-auto leading-relaxed">
+                Evaluation results and Bayesian item response parameters recorded to your sovereign competency passbook.
+              </p>
+            </div>
 
-            <div className="mt-6 grid grid-cols-2 md:grid-cols-4 gap-3 max-w-2xl mx-auto">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 max-w-2xl mx-auto">
               {/* Score */}
-              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
-                <p className="text-[10px] uppercase font-mono text-slate-400">Score</p>
-                <p className="text-2xl font-display font-bold text-white mt-0.5 num-tabular">
-                  {result.score_percent || result.score}%
-                </p>
+              <div className="p-4 rounded-xl bg-white/[0.025] border border-white/10 text-center">
+                <p className="text-xs uppercase font-mono text-slate-400">Score</p>
+                <StatsCounter
+                  value={parseFloat(result.score_percent || result.score || 0)}
+                  decimals={0}
+                  suffix="%"
+                  duration={1.2}
+                  className="text-2xl sm:text-3xl font-urbanist font-extrabold text-white mt-1"
+                />
               </div>
 
               {/* Theta Ability */}
-              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
-                <p className="text-[10px] uppercase font-mono text-slate-400">Ability (&theta;)</p>
-                <p className="text-2xl font-display font-bold text-emerald-400 mt-0.5 font-mono num-tabular">
-                  {result.final_theta !== undefined ? result.final_theta.toFixed(2) : ((result.score || 70) / 20).toFixed(2)}
-                </p>
+              <div className="p-4 rounded-xl bg-white/[0.025] border border-white/10 text-center">
+                <p className="text-xs uppercase font-mono text-slate-400">Ability (&theta;)</p>
+                <StatsCounter
+                  value={parseFloat(result.final_theta !== undefined ? result.final_theta : ((result.score || 70) / 20))}
+                  decimals={2}
+                  duration={1.2}
+                  className="text-2xl sm:text-3xl font-urbanist font-extrabold text-[#C084FC] mt-1 font-mono"
+                />
               </div>
 
               {/* Estimation Confidence */}
-              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
-                <p className="text-[10px] uppercase font-mono text-slate-400">Confidence</p>
-                <p className="text-xs font-semibold text-slate-200 mt-2">
+              <div className="p-4 rounded-xl bg-white/[0.025] border border-white/10 text-center">
+                <p className="text-xs uppercase font-mono text-slate-400">Confidence</p>
+                <p className="text-xs sm:text-sm font-bold text-slate-200 mt-2 font-urbanist">
                   {result.confidence_of_estimate || (result.converged ? "Converged" : "Standard")}
                 </p>
               </div>
 
               {/* Status */}
-              <div className="p-3 rounded-md bg-[#070d18] border border-white/[0.06]">
-                <p className="text-[10px] uppercase font-mono text-slate-400">Cadre Standard</p>
-                <p
-                  className={`text-xs font-mono font-bold uppercase mt-2 px-2 py-0.5 rounded border inline-block ${
-                    (result.score_percent || result.score) >= 60
-                      ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/25"
-                      : "bg-rose-500/10 text-rose-300 border-rose-500/25"
-                  }`}
-                >
-                  {(result.score_percent || result.score) >= 60 ? "Met" : "Deficit"}
-                </p>
+              <div className="p-4 rounded-xl bg-white/[0.025] border border-white/10 text-center">
+                <p className="text-xs uppercase font-mono text-slate-400">Cadre Standard</p>
+                <div className="mt-2">
+                  <span
+                    className={`text-xs font-mono font-bold uppercase px-2.5 py-0.5 rounded-full border inline-block ${
+                      (result.score_percent || result.score) >= 60
+                        ? "bg-[#A068FF]/15 text-[#C084FC] border-[#A068FF]/30"
+                        : "bg-rose-500/15 text-rose-300 border-rose-500/30"
+                    }`}
+                  >
+                    {(result.score_percent || result.score) >= 60 ? "Met" : "Deficit"}
+                  </span>
+                </div>
               </div>
             </div>
 
             {/* Questions by Difficulty Breakdown */}
             {result.difficulty_distribution && (
-              <div className="mt-5 p-3.5 rounded-md sovereign-well max-w-xl mx-auto">
-                <p className="text-xs font-medium text-slate-300 mb-2.5 text-left font-mono">
+              <div className="p-5 rounded-2xl bg-white/[0.02] border border-white/10 max-w-xl mx-auto space-y-3">
+                <p className="text-xs font-bold text-slate-300 text-left font-mono">
                   ITEM ROUTING DISTRIBUTION:
                 </p>
-                <div className="grid grid-cols-5 gap-2">
+                <div className="grid grid-cols-5 gap-2.5">
                   {[1, 2, 3, 4, 5].map((lvl) => {
                     const count = result.difficulty_distribution[lvl] || 0;
                     return (
-                      <div key={lvl} className="p-2 rounded bg-[#0b1424] border border-white/[0.06] text-center font-mono">
-                        <p className="text-[10px] text-slate-400">Lvl {lvl}</p>
+                      <div key={lvl} className="p-2.5 rounded-xl bg-white/[0.025] border border-white/10 text-center font-mono">
+                        <p className="text-xs text-slate-400 font-semibold">Lvl {lvl}</p>
                         <p className="text-sm font-bold text-white mt-0.5 num-tabular">{count}</p>
                       </div>
                     );
@@ -696,64 +748,81 @@ export default function QuizPage() {
               </div>
             )}
 
-            <div className="mt-7 flex items-center justify-center gap-3">
+            <div className="pt-4 flex items-center justify-center gap-4">
               <button
                 onClick={() => navigate("/")}
-                className="btn-primary text-xs py-2 px-4"
+                className="btn-primary text-xs sm:text-sm py-2.5 px-6"
               >
                 View Passbook
               </button>
               <button
                 onClick={reset}
-                className="btn-secondary text-xs py-2 px-3 gap-1.5"
+                className="btn-secondary text-xs sm:text-sm py-2.5 px-5 gap-2"
               >
-                <RotateCcw className="w-3.5 h-3.5" />
+                <RotateCcw className="w-4 h-4" />
                 <span>Retake / New Test</span>
               </button>
             </div>
           </div>
 
           {/* Breakdown per question */}
-          <div className="p-5 sm:p-6 rounded-lg sovereign-card space-y-3.5">
-            <h3 className="font-display font-semibold text-sm text-white mb-2">
+          <div className="p-6 sm:p-8 rounded-2xl sovereign-card border border-white/10 space-y-4 shadow-xl">
+            <h3 className="font-urbanist font-bold text-base sm:text-lg text-white mb-3">
               Performance Review & Item Rationales
             </h3>
 
             {result.breakdown?.map((item, idx) => (
               <div
                 key={idx}
-                className="p-3.5 rounded-md bg-[#070d18] border border-white/[0.06] text-xs space-y-1.5"
+                className="p-4 sm:p-5 rounded-xl bg-white/[0.02] border border-white/10 text-xs sm:text-sm space-y-2.5"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div>
-                    <span className="px-1.5 py-0.2 rounded bg-white/[0.05] text-[10px] font-mono text-emerald-400 border border-white/10 mb-1 inline-block">
+                    <span className="px-2 py-0.5 rounded-full bg-[#A068FF]/15 text-[10px] font-mono font-bold text-[#C084FC] border border-[#A068FF]/30 mb-1.5 inline-block">
                       Level {item.difficulty || 3}
                     </span>
-                    <p className="font-medium text-slate-200 mt-0.5">
+                    <p className="font-medium text-slate-100 text-sm sm:text-base leading-snug">
                       {idx + 1}. {item.question}
                     </p>
                   </div>
                   {item.is_correct ? (
-                    <span className="flex items-center gap-1 text-emerald-400 shrink-0 font-mono text-[11px]">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> Correct
+                    <span className="flex items-center gap-1.5 text-[#C084FC] shrink-0 font-mono text-xs font-bold">
+                      <CheckCircle2 className="w-4 h-4 text-[#A068FF]" /> Correct
                     </span>
                   ) : (
-                    <span className="flex items-center gap-1 text-rose-400 shrink-0 font-mono text-[11px]">
-                      <XCircle className="w-3.5 h-3.5" /> Incorrect
+                    <span className="flex items-center gap-1.5 text-rose-400 shrink-0 font-mono text-xs font-bold">
+                      <XCircle className="w-4 h-4 text-rose-400" /> Incorrect
                     </span>
                   )}
                 </div>
 
                 {item.explanation && (
-                  <p className="text-slate-400 text-[11px] leading-relaxed pl-2.5 border-l border-emerald-500/40 mt-2">
+                  <p className="text-slate-300 text-xs leading-relaxed pl-3 border-l-2 border-[#A068FF] mt-2">
                     {item.explanation}
                   </p>
+                )}
+
+                {/* Question-Level Source Evidence Citation */}
+                {(item.source_excerpt || item.document_name) && (
+                  <div className="mt-2.5 p-3 rounded-xl bg-[#A068FF]/5 border border-[#A068FF]/20 text-xs space-y-1">
+                    <div className="flex items-center justify-between font-mono text-slate-400">
+                      <span className="text-[#C084FC] font-semibold">
+                        Grounded Source: {item.document_name || "Official Cadre Manual"}
+                      </span>
+                      <span>Page {item.page_number || 1}</span>
+                    </div>
+                    {item.source_excerpt && (
+                      <p className="text-slate-300 text-xs leading-relaxed italic border-l-2 border-[#A068FF] pl-2.5 mt-1">
+                        "{item.source_excerpt}"
+                      </p>
+                    )}
+                  </div>
                 )}
               </div>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </motion.div>
   );
 }
