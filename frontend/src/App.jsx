@@ -24,7 +24,7 @@ function AuthRedirect({ children }) {
   return children;
 }
 
-// After login, if a user has no position and hasn't completed onboarding,
+// After login, if a user hasn't completed onboarding,
 // redirect them to /onboarding. Skip for admins and the onboarding page itself.
 function OnboardingGuard({ children }) {
   const { token, learner } = useAuth();
@@ -37,7 +37,6 @@ function OnboardingGuard({ children }) {
       learner &&
       !learner.is_admin &&
       !learner.onboarding_completed &&
-      !learner.position_id &&
       location.pathname !== "/onboarding" &&
       location.pathname !== "/login" &&
       location.pathname !== "/register" &&

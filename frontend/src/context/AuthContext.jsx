@@ -45,6 +45,7 @@ export function AuthProvider({ children }) {
               name: auth.currentUser.displayName || auth.currentUser.email.split("@")[0],
               position_title: "Statistical Officer (NSS Cadre)",
               department: "MoSPI",
+              onboarding_completed: false,
             });
           } else {
             localStorage.removeItem("skilllens_token");
@@ -87,6 +88,7 @@ export function AuthProvider({ children }) {
           name: fbUser.displayName || fbUser.email.split("@")[0],
           position_title: "Statistical Officer (NSS Cadre)",
           department: "MoSPI",
+          onboarding_completed: false,
         };
         setLearner(fallback);
         return fallback;
@@ -106,6 +108,7 @@ export function AuthProvider({ children }) {
           department: "MoSPI",
           qualification: extraData.qualification || "M.Sc Statistics",
           experience_years: extraData.experience_years || 2,
+          onboarding_completed: false,
         };
         setLearner(fallbackLearner);
         return fallbackLearner;
