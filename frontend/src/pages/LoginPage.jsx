@@ -106,14 +106,16 @@ export default function LoginPage() {
       const cleanPassword = (form.password || "").trim();
       if (mode === "login") {
         const user = await login(cleanEmail, cleanPassword);
-        if (
+        if (!user?.onboarding_completed) {
+          navigate("/onboarding", { replace: true });
+        } else if (
           user?.is_admin ||
           cleanEmail.toLowerCase().includes("admin") ||
           cleanEmail.toLowerCase() === "geneewoan@gmail.com"
         ) {
-          navigate("/admin");
+          navigate("/admin", { replace: true });
         } else {
-          navigate("/");
+          navigate("/", { replace: true });
         }
       } else {
         const payload = {
@@ -150,14 +152,16 @@ export default function LoginPage() {
       if (res?.alreadyVerified) {
         setSuccessMsg("Your email is already verified! Signing you in now...");
         const user = await login(form.email, form.password);
-        if (
+        if (!user?.onboarding_completed) {
+          navigate("/onboarding", { replace: true });
+        } else if (
           user?.is_admin ||
           form.email.toLowerCase().includes("admin") ||
           form.email.toLowerCase() === "geneewoan@gmail.com"
         ) {
-          navigate("/admin");
+          navigate("/admin", { replace: true });
         } else {
-          navigate("/");
+          navigate("/", { replace: true });
         }
         return;
       }
@@ -184,14 +188,16 @@ export default function LoginPage() {
         setLoading(false);
         return;
       }
-      if (
+      if (!user?.onboarding_completed) {
+        navigate("/onboarding", { replace: true });
+      } else if (
         user?.is_admin ||
         user?.email?.toLowerCase().includes("admin") ||
         user?.email?.toLowerCase() === "geneewoan@gmail.com"
       ) {
-        navigate("/admin");
+        navigate("/admin", { replace: true });
       } else {
-        navigate("/");
+        navigate("/", { replace: true });
       }
     } catch (err) {
       setError(getFriendlyErrorMessage(err));

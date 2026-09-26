@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useAuthModal } from "../context/AuthModalContext";
 import client from "../api/client";
@@ -49,6 +50,7 @@ function getFriendlyErrorMessage(err) {
 }
 
 export default function AuthModal() {
+  const navigate = useNavigate();
   const { isOpen, initialMode, closeAuthModal, onAuthSuccess } = useAuthModal();
   const { login, register, loginWithGoogle, resetPassword, resendVerification } = useAuth();
 
@@ -113,8 +115,19 @@ export default function AuthModal() {
       const cleanEmail = (form.email || "").trim();
       const cleanPassword = (form.password || "").trim();
       if (mode === "login") {
-        await login(cleanEmail, cleanPassword);
-        onAuthSuccess();
+        const user = await login(cleanEmail, cleanPassword);
+        closeAuthModal();
+        if (!user?.onboarding_completed) {
+          navigate("/onboarding", { replace: true });
+        } else if (
+          user?.is_admin ||
+          cleanEmail.toLowerCase().includes("admin") ||
+          cleanEmail.toLowerCase() === "geneewoan@gmail.com"
+        ) {
+          navigate("/admin", { replace: true });
+        } else {
+          onAuthSuccess();
+        }
       } else {
         const payload = {
           ...form,
@@ -149,8 +162,19 @@ export default function AuthModal() {
       const res = await resendVerification(form.email, form.password);
       if (res?.alreadyVerified) {
         setSuccessMsg("Your email is already verified! Signing you in now...");
-        await login(form.email, form.password);
-        onAuthSuccess();
+        const user = await login(form.email, form.password);
+        closeAuthModal();
+        if (!user?.onboarding_completed) {
+          navigate("/onboarding", { replace: true });
+        } else if (
+          user?.is_admin ||
+          form.email.toLowerCase().includes("admin") ||
+          form.email.toLowerCase() === "geneewoan@gmail.com"
+        ) {
+          navigate("/admin", { replace: true });
+        } else {
+          onAuthSuccess();
+        }
         return;
       }
       setSuccessMsg(
@@ -176,7 +200,18 @@ export default function AuthModal() {
         setLoading(false);
         return;
       }
-      onAuthSuccess();
+      closeAuthModal();
+      if (!user?.onboarding_completed) {
+        navigate("/onboarding", { replace: true });
+      } else if (
+        user?.is_admin ||
+        user?.email?.toLowerCase().includes("admin") ||
+        user?.email?.toLowerCase() === "geneewoan@gmail.com"
+      ) {
+        navigate("/admin", { replace: true });
+      } else {
+        onAuthSuccess();
+      }
     } catch (err) {
       setError(getFriendlyErrorMessage(err));
     } finally {

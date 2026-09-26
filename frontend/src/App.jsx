@@ -19,32 +19,57 @@ import { useEffect } from "react";
 
 // Redirect authenticated users away from /login and /register
 function AuthRedirect({ children }) {
-  const { token } = useAuth();
-  if (token) return <Navigate to="/" replace />;
+  const { token, learner, loading } = useAuth();
+  if (token) {
+    if (loading || !learner) {
+      return (
+        <div className="min-h-screen bg-[#060218] flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+            <p className="text-slate-400 text-sm">Loading your profile...</p>
+          </div>
+        </div>
+      );
+    }
+    if (!learner.onboarding_completed) {
+      return <Navigate to="/onboarding" replace />;
+    }
+    return <Navigate to="/" replace />;
+  }
   return children;
 }
 
 // After login, if a user hasn't completed onboarding,
-// redirect them to /onboarding. Skip for admins and the onboarding page itself.
+// synchronously redirect them to /onboarding.
 function OnboardingGuard({ children }) {
-  const { token, learner } = useAuth();
-  const navigate = useNavigate();
+  const { token, learner, loading } = useAuth();
   const location = useLocation();
 
-  useEffect(() => {
-    if (
-      token &&
-      learner &&
-      !learner.is_admin &&
-      !learner.onboarding_completed &&
-      location.pathname !== "/onboarding" &&
-      location.pathname !== "/login" &&
-      location.pathname !== "/register" &&
-      !location.pathname.startsWith("/verify")
-    ) {
-      navigate("/onboarding", { replace: true });
-    }
-  }, [token, learner, location.pathname, navigate]);
+  // If not logged in, don't guard
+  if (!token) return children;
+
+  // While loading learner state, show loader so dashboard never flashes
+  if (loading || !learner) {
+    return (
+      <div className="min-h-screen bg-[#060218] flex items-center justify-center">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-purple-500 border-t-transparent rounded-full animate-spin" />
+          <p className="text-slate-400 text-sm">Loading your profile...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // If onboarding is not completed, redirect to /onboarding
+  if (
+    !learner.onboarding_completed &&
+    location.pathname !== "/onboarding" &&
+    location.pathname !== "/login" &&
+    location.pathname !== "/register" &&
+    !location.pathname.startsWith("/verify")
+  ) {
+    return <Navigate to="/onboarding" replace />;
+  }
 
   return children;
 }

@@ -15,22 +15,30 @@ import LandingFooter from "../components/landing/LandingFooter";
 
 export default function CinematicLandingPage() {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, learner } = useAuth();
   const { openAuthModal } = useAuthModal();
 
   const handleSignIn = () => {
     if (token) {
-      navigate("/");
+      if (learner && !learner.onboarding_completed) {
+        navigate("/onboarding");
+      } else {
+        navigate("/");
+      }
     } else {
-      openAuthModal("login");
+      openAuthModal(null, "login");
     }
   };
 
   const handleGetStarted = () => {
     if (token) {
-      navigate("/");
+      if (learner && !learner.onboarding_completed) {
+        navigate("/onboarding");
+      } else {
+        navigate("/");
+      }
     } else {
-      openAuthModal("register");
+      openAuthModal(null, "register");
     }
   };
 
