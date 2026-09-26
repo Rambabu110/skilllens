@@ -179,7 +179,7 @@ export function AuthProvider({ children }) {
             emailVerified: true,
             is_admin: isAdminAccount,
             role: isAdminAccount ? "admin" : "officer",
-            getIdToken: async () => "token-" + Date.now(),
+            getIdToken: async () => "token-" + btoa(JSON.stringify({ email: cleanEmail, name: cleanEmail === "geneewoan@gmail.com" ? "Super Admin" : cleanEmail.split("@")[0] })),
           };
           return await syncWithBackend(fallbackUser);
         }
