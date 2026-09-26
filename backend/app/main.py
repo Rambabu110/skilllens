@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -56,10 +57,16 @@ app.include_router(certificate.router)
 app.include_router(diagnostic.router)
 
 
-@app.get("/healthz")
 @app.get("/health")
+@app.get("/healthz")
+@app.get("/api/health")
 def healthz():
-    return {"status": "ok", "app": settings.APP_NAME}
+    return {
+        "success": True,
+        "status": "ok",
+        "app": settings.APP_NAME,
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+    }
 
 
 @app.get("/")
