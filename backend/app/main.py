@@ -57,9 +57,9 @@ app.include_router(certificate.router)
 app.include_router(diagnostic.router)
 
 
-@app.get("/health")
-@app.get("/healthz")
-@app.get("/api/health")
+@app.api_route("/health", methods=["GET", "HEAD"])
+@app.api_route("/healthz", methods=["GET", "HEAD"])
+@app.api_route("/api/health", methods=["GET", "HEAD"])
 def healthz():
     return {
         "success": True,
@@ -69,13 +69,15 @@ def healthz():
     }
 
 
-@app.get("/")
+@app.api_route("/", methods=["GET", "HEAD"])
 def root():
     return {
         "app": settings.APP_NAME,
+        "version": "1.0.0",
+        "docs": "/docs",
+        "framework": "Mission Karmayogi FRAC",
         "status": "running",
         "note": "iGOT Karmayogi integration is simulated via /mock-igot/* "
                 "(no public iGOT API exists). ML competency model is trained "
                 "on real OULAD data. Quiz generation calls a real LLM.",
-        "docs": "/docs",
     }
