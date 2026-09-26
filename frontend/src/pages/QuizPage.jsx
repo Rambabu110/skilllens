@@ -14,6 +14,7 @@ import {
   Award,
   Languages,
   BookOpen,
+  FileText,
   Check,
   AlertCircle,
 } from "lucide-react";
@@ -262,6 +263,24 @@ export default function QuizPage() {
             </div>
           )}
 
+          {/* Preselected Document Notification */}
+          {(location.state?.documentName || location.state?.documentId) && !file && (
+            <div className="p-4 rounded-xl bg-[#A068FF]/10 border border-[#A068FF]/40 flex items-center justify-between shadow-[0_0_15px_rgba(160,104,255,0.15)]">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-lg bg-[#A068FF]/20 flex items-center justify-center text-[#A068FF]">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div>
+                  <p className="text-xs font-urbanist font-bold text-white">RAG Source Document Active</p>
+                  <p className="text-xs text-purple-200 font-sans mt-0.5 font-medium">{location.state.documentName || "Indexed Reference Document"}</p>
+                </div>
+              </div>
+              <span className="text-xs font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-semibold">
+                VECTOR READY
+              </span>
+            </div>
+          )}
+
           {/* File Upload Zone */}
           <div>
             <label className="block text-xs font-bold text-slate-300 mb-2 font-urbanist uppercase tracking-wider">
@@ -425,7 +444,15 @@ export default function QuizPage() {
             ) : (
               <>
                 <Sparkles className="w-4 h-4" />
-                <span>Initialize Adaptive Assessment</span>
+                <span>
+                  {file
+                    ? `Generate Assessment from ${file.name}`
+                    : location.state?.documentName
+                    ? `Generate Assessment from ${location.state.documentName}`
+                    : preselectedTitle
+                    ? `Generate Assessment from ${preselectedTitle}`
+                    : "Initialize Adaptive Assessment"}
+                </span>
               </>
             )}
           </button>
