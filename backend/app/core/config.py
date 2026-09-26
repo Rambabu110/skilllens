@@ -33,7 +33,6 @@ class Settings(BaseSettings):
         "geneewoan@gmail.com",
         "admin@skilllens.in",
         "admin.demo@skilllens.in",
-        "ramm205061@gmail.com",
     ]
 
     # --- Firebase Admin ---

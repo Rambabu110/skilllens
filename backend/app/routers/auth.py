@@ -167,6 +167,7 @@ def firebase_sync(payload: FirebaseAuthRequest, request: Request, db: Session = 
             qualification=payload.qualification or "Graduate",
             experience_years=payload.experience_years or 0.0,
             is_admin=admin_flag,
+            onboarding_completed=False,
             last_login_at=datetime.utcnow(),
             login_count=1,
         )
