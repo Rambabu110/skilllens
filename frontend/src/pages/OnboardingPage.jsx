@@ -320,22 +320,7 @@ export default function OnboardingPage() {
     setSubmitting(true);
     setError("");
     try {
-      // If token is missing, attempt to acquire a demo session first so backend persistence works
       let activeToken = token || localStorage.getItem("skilllens_token");
-      if (!activeToken) {
-        try {
-          const loginRes = await client.post("/auth/login", {
-            email: "rohan.demo@skilllens.in",
-            password: "demo1234",
-          });
-          if (loginRes.data?.access_token) {
-            activeToken = loginRes.data.access_token;
-            localStorage.setItem("skilllens_token", activeToken);
-          }
-        } catch {
-          // If demo login fails, will proceed to local profile save
-        }
-      }
 
       const res = await client.post("/auth/onboarding", {
         ...form,

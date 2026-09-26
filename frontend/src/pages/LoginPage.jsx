@@ -348,35 +348,6 @@ export default function LoginPage() {
                 </span>
               </div>
 
-              {/* 1-Click Instant Demo Personas Strip */}
-              <div className="p-3 rounded-2xl bg-black/40 border border-white/10 space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-medium">
-                  <span className="text-[#A068FF] flex items-center gap-1.5 font-bold font-urbanist">
-                    <Zap className="w-3.5 h-3.5 fill-[#A068FF] text-[#A068FF]" />
-                    1-Click Instant Demo Personas
-                  </span>
-                  <span className="text-[10px] text-slate-500 font-mono">Pre-seeded</span>
-                </div>
-                <div className="grid grid-cols-2 gap-2">
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("aditi.demo@skilllens.in", "demo1234")}
-                    className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-[#A068FF]/15 border border-white/10 hover:border-[#A068FF]/30 text-[11px] text-slate-300 hover:text-white font-medium text-left truncate transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-[#A068FF] shrink-0" />
-                    <span className="truncate">Aditi (Officer)</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => handleQuickDemo("admin.demo@skilllens.in", "admin1234")}
-                    className="py-1.5 px-2 rounded-lg bg-white/[0.04] hover:bg-sky-500/15 border border-white/10 hover:border-sky-500/30 text-[11px] text-slate-300 hover:text-white font-medium text-left truncate transition-colors flex items-center gap-1.5 cursor-pointer"
-                  >
-                    <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
-                    <span className="truncate">Admin (MoSPI)</span>
-                  </button>
-                </div>
-              </div>
-
               {/* Mode Selector Tabs */}
               <div className="flex rounded-xl bg-black/50 p-1 border border-white/10 w-full">
                 <button

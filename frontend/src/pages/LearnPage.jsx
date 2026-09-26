@@ -595,7 +595,7 @@ export default function LearnPage() {
                     <button
                       onClick={() => {
                         navigate("/quiz", {
-                          state: { documentName: doc.name },
+                          state: { documentId: doc.id, documentName: doc.name },
                         });
                       }}
                       className="btn-primary text-xs sm:text-sm py-2 px-4 gap-2 shadow-[0_0_15px_rgba(160,104,255,0.3)]"

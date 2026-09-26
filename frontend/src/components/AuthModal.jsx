@@ -16,7 +16,6 @@ import {
   X,
   Eye,
   EyeOff,
-  Zap,
   ShieldCheck,
 } from "lucide-react";
 
@@ -101,13 +100,6 @@ export default function AuthModal() {
     if (isOpen) document.addEventListener("keydown", onKeyDown);
     return () => document.removeEventListener("keydown", onKeyDown);
   }, [isOpen, closeAuthModal]);
-
-  function handleQuickDemo(email, password) {
-    setForm((prev) => ({ ...prev, email, password }));
-    setMode("login");
-    setError("");
-    setSuccessMsg(`Loaded credentials for ${email}. Click "Verify & Sign In" below.`);
-  }
 
   if (!isOpen) return null;
 
@@ -244,36 +236,6 @@ export default function AuthModal() {
         <div className="p-6 rounded-3xl bg-slate-900/90 border border-white/10 shadow-[0_20px_50px_rgba(0,0,0,0.8)] space-y-4 relative overflow-hidden">
           {/* Subtle top glow line */}
           <div className="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-[#A068FF] to-sky-500" />
-
-          {/* 1-Click Demo Personas */}
-          <div className="p-2.5 rounded-xl bg-black/40 border border-white/10 space-y-1.5">
-            <div className="flex items-center justify-between text-[11px] font-medium">
-              <span className="text-[#A068FF] flex items-center gap-1 font-bold font-urbanist">
-                <Zap className="w-3 h-3 fill-[#A068FF] text-[#A068FF]" />
-                1-Click Demo Personas
-              </span>
-              <span className="text-[10px] text-slate-500 font-mono">Pre-seeded</span>
-            </div>
-            <div className="grid grid-cols-2 gap-1.5">
-              <button
-                type="button"
-                onClick={() => handleQuickDemo("aditi.demo@skilllens.in", "demo1234")}
-                className="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-[#A068FF]/15 border border-white/10 hover:border-[#A068FF]/30 text-[11px] text-slate-300 hover:text-white font-medium text-left truncate transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-[#A068FF] shrink-0" />
-                <span className="truncate">Aditi (Officer)</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickDemo("admin.demo@skilllens.in", "admin1234")}
-                className="py-1 px-2 rounded-lg bg-white/[0.04] hover:bg-sky-500/15 border border-white/10 hover:border-sky-500/30 text-[11px] text-slate-300 hover:text-white font-medium text-left truncate transition-colors flex items-center gap-1.5 cursor-pointer"
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-400 shrink-0" />
-                <span className="truncate">Admin (MoSPI)</span>
-              </button>
-            </div>
-          </div>
-
           {/* Mode Switcher */}
           <div className="flex rounded-xl bg-black/50 p-1 border border-white/10 w-full">
             <button

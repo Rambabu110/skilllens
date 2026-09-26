@@ -43,7 +43,6 @@ export default function HubPage() {
     positions: 0,
     llm: "operational",
   });
-  const [switchingPersona, setSwitchingPersona] = useState(false);
 
   useEffect(() => {
     client
@@ -63,17 +62,6 @@ export default function HubPage() {
         });
       });
   }, []);
-
-  async function handleQuickSwitch(email, password) {
-    setSwitchingPersona(true);
-    try {
-      await login(email, password);
-    } catch (err) {
-      console.error("Persona switch error:", err);
-    } finally {
-      setSwitchingPersona(false);
-    }
-  }
 
   const CATEGORIES = [
     { id: "all", label: "All Capabilities (9)" },
@@ -306,52 +294,44 @@ export default function HubPage() {
             </p>
           </div>
 
-          {/* Quick Persona Switcher Strip */}
-          <div className="p-3 rounded-lg bg-[#070e1c] border border-white/10 space-y-2 shrink-0 w-full lg:w-auto">
-            <div className="flex items-center justify-between text-[11px]">
-              <span className="text-slate-300 font-semibold flex items-center gap-1">
-                <Users className="w-3.5 h-3.5 text-emerald-400" />
-                1-Click Persona Testing
+          {/* Cadre Authentication Status Strip */}
+          <div className="p-3.5 rounded-xl bg-[#070e1c] border border-white/10 space-y-2 shrink-0 w-full lg:w-auto min-w-[280px]">
+            <div className="flex items-center justify-between text-[11px] gap-2">
+              <span className="text-slate-300 font-semibold flex items-center gap-1.5 font-urbanist">
+                <ShieldCheck className="w-3.5 h-3.5 text-[#A068FF]" />
+                Cadre Authentication
               </span>
-              <span className="text-[10px] font-mono text-emerald-400">
-                {learner ? `Active: ${learner.name}` : "Guest Mode"}
+              <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full ${
+                token ? "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" : "bg-slate-800 text-slate-400 border border-white/10"
+              }`}>
+                {token ? "Authenticated" : "Guest Mode"}
               </span>
             </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                disabled={switchingPersona}
-                onClick={() => handleQuickSwitch("aditi.sharma@mospi.gov.in", "mospi1234")}
-                className={`py-1.5 px-3 rounded text-[11px] font-medium transition-all flex items-center gap-1.5 border ${
-                  learner?.email === "aditi.sharma@mospi.gov.in"
-                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
-                    : "bg-white/[0.04] text-slate-300 hover:bg-emerald-500/15 hover:border-emerald-500/30 border-white/10"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-                <span>Aditi (Officer)</span>
-              </button>
-              <button
-                type="button"
-                disabled={switchingPersona}
-                onClick={() => handleQuickSwitch("admin.demo@skilllens.in", "admin1234")}
-                className={`py-1.5 px-3 rounded text-[11px] font-medium transition-all flex items-center gap-1.5 border ${
-                  learner?.is_admin
-                    ? "bg-cyan-500/20 text-cyan-300 border-cyan-500/40"
-                    : "bg-white/[0.04] text-slate-300 hover:bg-cyan-500/15 hover:border-cyan-500/30 border-white/10"
-                }`}
-              >
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400" />
-                <span>Admin (MoSPI)</span>
-              </button>
-              {token && (
+            <div className="flex items-center justify-between gap-3">
+              {learner ? (
+                <div className="space-y-0.5 min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">{learner.name}</p>
+                  <p className="text-[10px] text-slate-400 truncate">{learner.email}</p>
+                </div>
+              ) : (
+                <p className="text-[11px] text-slate-400">Sign in to access your FRAC competencies</p>
+              )}
+              {token ? (
                 <button
                   type="button"
                   onClick={() => logout()}
-                  className="py-1.5 px-2.5 rounded text-[11px] font-medium bg-white/[0.04] hover:bg-rose-500/15 text-slate-400 hover:text-rose-300 border border-white/10 transition-all"
-                  title="Sign Out to test Guest Mode"
+                  className="py-1.5 px-3 rounded-lg text-xs font-medium bg-rose-500/10 hover:bg-rose-500/20 text-rose-300 border border-rose-500/30 transition-all shrink-0 cursor-pointer"
                 >
-                  Reset
+                  Sign Out
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => openAuthModal("login")}
+                  className="py-1.5 px-3 rounded-lg text-xs font-semibold bg-[#A068FF] hover:bg-[#8e4ff8] text-white shadow-md shadow-[#A068FF]/20 transition-all shrink-0 flex items-center gap-1 cursor-pointer"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  Sign In
                 </button>
               )}
             </div>

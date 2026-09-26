@@ -49,53 +49,82 @@ export default function QuizPage() {
     if (!authed) return;
     setError("");
     setLoading(true);
-    setLoadingText(
-      mode === "adaptive"
-        ? "Calibrating Bayesian CAT Engine with FRAC Framework…"
-        : "Extracting Text & Generating Assessment Questions…"
-    );
 
     try {
-      if (mode === "adaptive") {
-        const payload = {
-          competency_id: location.state?.competencyId || preselectedModule || "comp_stat_sampling",
-          topic: location.state?.competencyName || preselectedTitle || "Statistical Sampling & Analysis",
+      let generatedQuiz = null;
+
+      // Case 1: Direct File Upload on QuizPage (e.g. English Grammar Book)
+      if (file) {
+        setLoadingText("Uploading and indexing document into RAG vector memory…");
+        const uploadData = new FormData();
+        uploadData.append("file", file);
+        const uploadRes = await client.post("/quiz/upload", uploadData, {
+          headers: { "Content-Type": "multipart/form-data" },
+        });
+        const docId = uploadRes.data.document_id;
+
+        setLoadingText("Synthesizing RAG-grounded questions from document…");
+        const genRes = await client.post("/quiz/generate", {
+          document_id: docId,
+          num_questions: numQuestions,
           language,
-        };
-        const res = await client.post("/quiz/adaptive/start", payload);
-        setAdaptiveSession(res.data);
+          mode,
+        });
+        generatedQuiz = genRes.data;
+      }
+      // Case 2: Indexed Document ID from LearnPage
+      else if (location.state?.documentId) {
+        setLoadingText("Generating questions from indexed document…");
+        const genRes = await client.post("/quiz/generate", {
+          document_id: location.state.documentId,
+          num_questions: numQuestions,
+          language,
+          mode,
+        });
+        generatedQuiz = genRes.data;
+      }
+      // Case 3: Learning Module preselected
+      else if (preselectedModule) {
+        setLoadingText("Extracting curriculum from module…");
+        const genRes = await client.post("/quiz/generate", {
+          module_id: preselectedModule,
+          num_questions: numQuestions,
+          language,
+          mode,
+        });
+        generatedQuiz = genRes.data;
+      }
+      // Case 4: Competency or Cadre Topic
+      else {
+        setLoadingText("Generating official statistical cadre questions…");
+        const genRes = await client.post("/quiz/generate", {
+          raw_text: location.state?.competencyName || preselectedTitle || "Official Statistics & Data Quality",
+          num_questions: numQuestions,
+          language,
+          mode,
+        });
+        generatedQuiz = genRes.data;
+      }
+
+      // Route based on selected mode: Adaptive (CAT) vs Static Battery
+      if (mode === "adaptive" && generatedQuiz?.id) {
+        setLoadingText("Initializing Computerized Adaptive Testing (CAT) session…");
+        const adaptRes = await client.post("/quiz/adaptive/start", {
+          quiz_id: generatedQuiz.id,
+          language,
+        });
+        setAdaptiveSession(adaptRes.data);
         setSelectedOption(-1);
         setStep(STEPS.TAKING);
-      } else {
-        let res;
-        if (file) {
-          const formData = new FormData();
-          formData.append("file", file);
-          formData.append("num_questions", numQuestions);
-          formData.append("language", language);
-          res = await client.post("/quiz/generate", formData, {
-            headers: { "Content-Type": "multipart/form-data" },
-          });
-        } else if (preselectedModule) {
-          res = await client.post("/quiz/generate-from-module", {
-            module_id: preselectedModule,
-            num_questions: numQuestions,
-            language,
-          });
-        } else {
-          res = await client.post("/quiz/generate-from-topic", {
-            topic: location.state?.competencyName || "Official Statistics & Data Quality",
-            num_questions: numQuestions,
-            language,
-          });
-        }
-        setQuiz(res.data);
-        setAnswers(new Array(res.data.questions.length).fill(-1));
+      } else if (generatedQuiz) {
+        setQuiz(generatedQuiz);
+        setAnswers(new Array(generatedQuiz.questions.length).fill(-1));
         setCurrentIndex(0);
         setStep(STEPS.TAKING);
       }
     } catch (err) {
-      setError(err.response?.data?.detail || "Error generating assessment.");
+      console.error("Quiz generation error:", err);
+      setError(err.response?.data?.detail || "Error generating assessment. Please verify backend status.");
     } finally {
       setLoading(false);
       setLoadingText("");
@@ -110,11 +139,16 @@ export default function QuizPage() {
     try {
       const res = await client.post("/quiz/adaptive/answer", {
         session_id: adaptiveSession.session_id,
-        question_id: adaptiveSession.question.id,
+        question_index: adaptiveSession.question_index ?? 0,
+        question_id: adaptiveSession.question?.id,
         selected_option: selectedOption,
       });
 
-      if (res.data.status === "converged") {
+      if (
+        res.data.status === "quiz_complete" ||
+        res.data.status === "converged" ||
+        res.data.score_percent !== undefined
+      ) {
         setResult(res.data);
         setStep(STEPS.RESULT);
       } else {
@@ -410,7 +444,7 @@ export default function QuizPage() {
                   <span className="font-urbanist font-bold text-white tracking-wide">Computerized Adaptive Testing</span>
                   <span className="text-slate-500 font-mono">·</span>
                   <span className="text-[#C084FC] font-mono font-semibold">
-                    Item #{adaptiveSession.questions_answered + 1}
+                    Item #{(adaptiveSession.questions_answered || 0) + 1}
                   </span>
                 </div>
 

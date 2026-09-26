@@ -145,6 +145,7 @@ class GenerateQuizRequest(BaseModel):
     document_id: Optional[str] = None
     module_id: Optional[str] = None
     raw_text: Optional[str] = None
+    topic: Optional[str] = None
     num_questions: int = 5
     language: str = "en"  # "en" or "hi"
     mode: Optional[str] = "adaptive"  # "adaptive" (default) or "fixed"
@@ -176,7 +177,8 @@ class AdaptiveStartRequest(BaseModel):
 
 class AdaptiveAnswerRequest(BaseModel):
     session_id: str
-    question_index: int
+    question_index: Optional[int] = None
+    question_id: Optional[str] = None
     selected_option: int
 
 
