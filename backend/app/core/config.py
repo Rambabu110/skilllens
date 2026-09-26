@@ -4,6 +4,7 @@ SAME code runs against local SQLite (dev/testing here) or Supabase
 Postgres (real deployment) with zero code changes.
 """
 import os
+from typing import Any
 from pydantic import field_validator
 from pydantic_settings import BaseSettings
 
@@ -48,7 +49,7 @@ class Settings(BaseSettings):
 
     # --- App ---
     APP_NAME: str = "SkillLens AI"
-    CORS_ORIGINS: list[str] = [
+    CORS_ORIGINS: Any = [
         "http://localhost:5173",
         "http://127.0.0.1:5173",
         "http://localhost:3000",
